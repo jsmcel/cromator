@@ -5,6 +5,7 @@
   "main": "app.js",
   "private": true,
   "scripts": {
+    "extract:stickers": "node scripts/extract-fanlink-stickers.cjs",
     "test": "playwright test tests/cromator.spec.js --reporter=line"
   },
   "keywords": [],
