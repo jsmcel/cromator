@@ -1,0 +1,17 @@
+{
+  "name": "cromator",
+  "version": "1.0.0",
+  "description": "App móvil-first para llevar el control de cromos Panini:",
+  "main": "app.js",
+  "private": true,
+  "scripts": {
+    "test": "playwright test tests/cromator.spec.js --reporter=line"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}

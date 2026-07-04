@@ -7,56 +7,98 @@ const USERS = [
   { email: "diego@cromos.es", password: "mundial", name: "Diego" },
 ];
 
-const DIEGO_REPEATS_SEED = "diego-repes-20260704";
-const USER_REPEAT_SEEDS = {
+const DIEGO_OFFICIAL_MISSING_SEED = "diego-missing-official-181-20260704";
+const DIEGO_OFFICIAL_REPEATS_SEED = "diego-repeats-clean-20260704";
+
+const USER_MISSING_SEEDS = {
   "diego@cromos.es": {
-    id: DIEGO_REPEATS_SEED,
-    repeats: {
-      "Especial FIFA": [7, 9, 10, 15, 16],
-      Alemania: [4, 9],
-      Argentina: [12],
-      Australia: [1, 1, 2, 2, 5, 6, 7, 13, 15, 18, 20],
-      Bosnia: [13],
-      Canadá: [19],
-      Catar: [1, 3, 5, 6, 8, 10, 12, 16, 17, 18, 19],
-      Chequia: [1, 8, 11, 13],
-      Curazao: [3, 7, 9, 11],
-      España: [3, 4, 5, 7, 9, 11, 17, 19],
-      USA: [2, 4, 8, 10, 14, 15],
-      Inglaterra: [1, 6, 7, 8, 10, 15, 17],
-      Haití: [4, 12, 13, 17, 20],
-      Noruega: [2, 4, 5, 7, 9, 10, 12, 15, 20],
-      "Nueva Zelanda": [2, 3, 7, 8, 15, 16, 18, 19, 20],
-      Uzbekistán: [12, 14, 17, 18],
-      Uruguay: [8, 15, 16, 17],
+    id: DIEGO_OFFICIAL_MISSING_SEED,
+    declaredMissingTotal: 181,
+    missing: {
+      Alemania: [1, 16],
+      Argelia: [9, 14],
+      Arabia: [1, 5, 7, 11, 15, 18],
+      Argentina: [2, 7, 9, 16],
+      Australia: [7, 8, 11, 14, 19],
+      Austria: [12, 14, 16],
+      Bélgica: [10, 11],
+      Bosnia: [2, 5, 9, 11, 18],
+      Brasil: [7],
+      "Cabo Verde": [8, 20],
+      Canadá: [7, 8],
+      Catar: [8, 11, 14, 17],
+      Chequia: [4],
+      Colombia: [4, 14],
+      Congo: [6, 9, 11, 12, 15, 18, 19],
+      Corea: [9, 10, 16, 17],
+      "Costa de Marfil": [8, 13, 18, 19, 20],
+      Croacia: [8, 11, 12, 18, 19],
+      Curazao: [1, 8, 9, 14, 16],
+      Ecuador: [8, 9, 18],
+      Egipto: [8, 10, 14, 15, 16, 18],
+      Escocia: [4, 5, 10, 16, 17],
+      Francia: [3, 6, 19, 20],
+      Ghana: [6, 20],
+      Haití: [5, 7, 10, 14, 16, 18],
+      Holanda: [8, 9, 10, 11, 14],
+      Inglaterra: [7, 12, 13, 15, 16, 20],
+      Irán: [8, 10, 12, 20],
+      Iraq: [2, 4, 9, 11],
+      Japón: [3, 11, 17],
+      Jordania: [2, 6, 7, 8, 10, 14, 15],
+      Marruecos: [8, 9],
+      México: [19],
+      Noruega: [1, 2, 3, 11, 16, 18],
+      "Nueva Zelanda": [1, 8, 11, 12, 16, 18],
+      Panamá: [4, 5, 14, 17, 19],
+      Paraguay: [4, 5, 6, 10, 11, 17, 19],
+      Portugal: [1, 2, 3, 4, 6, 11, 12],
+      Senegal: [6, 9, 17],
+      Sudáfrica: [5, 7, 10, 19],
+      Suecia: [8, 16, 17, 18],
+      Suiza: [5, 7, 19],
+      Turquía: [5, 8, 15],
+      Túnez: [8],
+      Uruguay: [10, 14],
+      USA: [3, 5, 11],
+      Uzbekistán: [5, 18],
     },
   },
 };
 
-const INITIAL_COUNTRIES = [
-  ["Alemania", [1, 16]],
-  ["Argelia", [9]],
-  ["Arabia", [7, 11, 15, 18]],
-  ["Argentina", [2, 7, 9, 16]],
-  ["Australia", [7, 8, 11, 14, 19]],
-  ["Bélgica", [10, 11]],
-  ["Bosnia", [2, 5, 9, 11, 18]],
-  ["Brasil", [6, 7]],
-  ["Cabo Verde", []],
-  ["Canadá", []],
-  ["Chequia", [4]],
-  ["Colombia", [10, 16, 17]],
-  ["Costa de Marfil", []],
-  ["Curazao", [1, 8, 18]],
-  ["España", [6, 20]],
-  ["Inglaterra", [9, 11]],
-  ["Marruecos", [8]],
-  ["Nueva Zelanda", [1, 4, 5, 6]],
-  ["Suiza", [10, 14]],
-  ["Uruguay", [10, 14]],
-  ["USA", [3, 5, 11]],
-  ["Uzbekistán", [5, 18]],
-];
+const USER_OFFICIAL_REPEAT_SEEDS = {
+  "diego@cromos.es": {
+    id: DIEGO_OFFICIAL_REPEATS_SEED,
+    repeats: {
+      "Especial FIFA": { 7: 1, 9: 1, 10: 1, 15: 1, 16: 1 },
+      Alemania: { 4: 2, 5: 1, 6: 1, 8: 1, 9: 1, 11: 1, 13: 1, 14: 1 },
+      Argelia: { 4: 1, 5: 1, 6: 1, 8: 1, 11: 1, 13: 2 },
+      Argentina: { 12: 1 },
+      Australia: { 1: 2, 2: 3, 3: 1, 4: 1, 5: 1, 6: 1 },
+      Canadá: { 6: 1, 9: 1, 10: 1, 11: 1, 12: 2, 13: 1 },
+      Catar: { 3: 1, 5: 2, 6: 2, 8: 1, 10: 2, 12: 1 },
+      Chequia: { 2: 1, 3: 1, 6: 1, 7: 2 },
+      Curazao: { 2: 1, 4: 1, 12: 1, 14: 1, 17: 1, 19: 1 },
+      Ecuador: { 2: 1, 3: 1, 10: 1, 14: 1, 16: 2 },
+      Ghana: { 1: 1, 7: 1, 8: 1, 10: 1, 15: 1, 16: 1, 17: 1 },
+      Haití: { 1: 1, 8: 1, 9: 1, 11: 2, 15: 3, 16: 1, 17: 1, 19: 2 },
+      Iraq: { 3: 1 },
+      Jordania: { 1: 1, 5: 2, 17: 1, 18: 1 },
+      Marruecos: { 2: 1, 6: 2, 12: 2, 16: 1, 17: 1, 19: 1 },
+      México: { 20: 1 },
+      Panamá: { 1: 1, 3: 1, 8: 1, 11: 1 },
+      Congo: { 1: 1, 3: 1, 4: 1, 8: 1, 11: 1 },
+      Senegal: { 1: 1, 3: 1, 5: 1, 10: 1, 12: 1, 15: 1 },
+      Sudáfrica: { 2: 1, 3: 2, 7: 1, 9: 1, 13: 4, 15: 1, 16: 1, 19: 2, 20: 1 },
+      Turquía: { 1: 1, 2: 1, 3: 1, 4: 2, 10: 1, 12: 1, 15: 1, 16: 1, 17: 1, 18: 1, 20: 1 },
+      Túnez: { 2: 1, 3: 2, 7: 1, 9: 1, 13: 4, 15: 1, 16: 1, 19: 2, 20: 1 },
+      Uruguay: { 8: 1, 15: 1, 16: 1, 17: 1 },
+      Uzbekistán: { 6: 1, 11: 1, 12: 1, 15: 1, 16: 1 },
+    },
+  },
+};
+
+const INITIAL_COUNTRIES = [];
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -73,6 +115,9 @@ const els = {
   ownedTotal: $("#ownedTotal"),
   repeatTotal: $("#repeatTotal"),
   crossCheckStatus: $("#crossCheckStatus"),
+  incidentPanel: $("#incidentPanel"),
+  incidentCount: $("#incidentCount"),
+  incidentList: $("#incidentList"),
   saveState: $("#saveState"),
   countrySelect: $("#countrySelect"),
   stickerNumber: $("#stickerNumber"),
@@ -228,6 +273,9 @@ function markMissing() {
   const number = readStickerNumber();
   if (!country || !number) return;
 
+  if (country.repeats[number]) {
+    addIncident(state, "Faltantes mandan: repe quitado al marcar falta", [`${country.name} ${number}`]);
+  }
   delete country.repeats[number];
   country.missing.add(number);
   saveAndRender(`${country.name} ${number} marcado como falta`);
@@ -240,7 +288,13 @@ function saveRepeats() {
   if (!country || !number) return;
 
   const count = clampNumber(Number(els.repeatCount.value), 0, 99);
-  country.missing.delete(number);
+  if (country.missing.has(number) && count > 0) {
+    delete country.repeats[number];
+    addIncident(state, "No guardado como repe porque sigue en faltantes", [`${country.name} ${number}`]);
+    saveAndRender(`${country.name} ${number} sigue en faltantes`);
+    focusNumber();
+    return;
+  }
 
   if (count === 0) {
     delete country.repeats[number];
@@ -401,11 +455,40 @@ function sortedNumbers(set) {
 function renderCrossCheck() {
   const conflicts = findRepeatMissingConflicts();
   const hasConflicts = conflicts.length > 0;
+  const incidentTotal = incidentItemTotal();
   els.crossCheckStatus.classList.toggle("is-ok", !hasConflicts);
   els.crossCheckStatus.classList.toggle("is-warn", hasConflicts);
   els.crossCheckStatus.textContent = hasConflicts
     ? `Revisar: ${conflicts.length} repes estaban en faltantes`
-    : "Cruce OK: ningun repe esta en faltantes";
+    : incidentTotal
+      ? `Cruce OK: ${incidentTotal} ${incidentTotal === 1 ? "incidencia registrada" : "incidencias registradas"}`
+      : "Cruce OK: ningun repe esta en faltantes";
+  renderIncidents();
+}
+
+function renderIncidents() {
+  const incidents = state.meta?.incidents || [];
+  els.incidentPanel.classList.toggle("is-hidden", incidents.length === 0);
+  els.incidentCount.textContent = String(incidentItemTotal());
+  els.incidentList.innerHTML = "";
+
+  incidents.slice(0, 12).forEach((incident) => {
+    const item = document.createElement("li");
+    const title = document.createElement("strong");
+    const detail = document.createElement("span");
+
+    title.textContent = incident.message;
+    detail.textContent = incident.details?.length ? incident.details.join(", ") : "";
+
+    item.append(title);
+    if (detail.textContent) item.append(detail);
+    els.incidentList.append(item);
+  });
+}
+
+function incidentItemTotal() {
+  const incidents = state.meta?.incidents || [];
+  return incidents.reduce((total, incident) => total + Math.max(1, incident.details?.length || 0), 0);
 }
 
 function saveCorrection() {
@@ -427,7 +510,7 @@ function saveCorrection() {
   }
 
   country.name = newName;
-  country.missing = new Set(withoutRepeatedNumbers(parseNumberList(els.editMissingNumbers.value), country));
+  country.missing = new Set(parseNumberList(els.editMissingNumbers.value));
   selectedCountry = newName;
   saveAndRender("Corrección guardada");
 }
@@ -484,6 +567,7 @@ function buildExportText() {
     .filter(Boolean);
 
   const missingTotal = state.countries.reduce((total, country) => total + country.missing.size, 0);
+  const incidents = state.meta?.incidents || [];
 
   return [
     `Faltan total: ${missingTotal}`,
@@ -492,6 +576,14 @@ function buildExportText() {
     "",
     "Repes",
     ...(repeated.length ? repeated : ["Sin repes"]),
+    "",
+    "Incidencias",
+    ...(incidents.length
+      ? incidents.map((incident) => {
+          const details = incident.details?.length ? `: ${incident.details.join(", ")}` : "";
+          return `${incident.message}${details}`;
+        })
+      : ["Sin incidencias"]),
   ].join("\n");
 }
 
@@ -524,14 +616,8 @@ function parseNumberList(text) {
   return Array.from(new Set(numbers || [])).sort((a, b) => a - b);
 }
 
-function withoutRepeatedNumbers(numbers, country) {
-  const repeated = new Set(Object.keys(country.repeats).map(Number));
-  return numbers.filter((number) => !repeated.has(number));
-}
-
 function addRepeat(country, number, amount = 1) {
   if (!number || number < 1 || number > ALBUM_SIZE) return;
-  country.missing.delete(number);
   country.repeats[number] = (country.repeats[number] || 0) + amount;
 }
 
@@ -549,16 +635,28 @@ function findRepeatMissingConflicts() {
   return conflicts;
 }
 
-function sanitizeRepeatMissingOverlap() {
-  if (!state) return 0;
-  let removed = 0;
-  state.countries.forEach((country) => {
+function resolveRepeatMissingConflicts(targetState) {
+  const resolved = [];
+  targetState.countries.forEach((country) => {
     Object.keys(country.repeats).forEach((number) => {
       const parsed = Number(number);
-      if (country.missing.delete(parsed)) removed += 1;
+      if (country.missing.has(parsed)) {
+        delete country.repeats[number];
+        resolved.push(`${country.name} ${parsed}`);
+      }
     });
   });
-  return removed;
+
+  if (resolved.length) {
+    addIncident(targetState, `Faltantes mandan: ${resolved.length} repes quitados`, resolved);
+  }
+
+  return resolved.length;
+}
+
+function sanitizeRepeatMissingOverlap() {
+  if (!state) return 0;
+  return resolveRepeatMissingConflicts(state);
 }
 
 function ensureCountry(name) {
@@ -598,7 +696,7 @@ function clampNumber(value, min, max) {
 function saveState() {
   if (!activeUser) return;
   const serializable = {
-    meta: state.meta || { seeds: [] },
+    meta: ensureMeta(state),
     countries: state.countries.map((country) => ({
       name: country.name,
       missing: sortedNumbers(country.missing),
@@ -713,27 +811,40 @@ function normalizeEmail(value) {
 }
 
 function sanitizeState(targetState) {
-  targetState.countries.forEach((country) => {
-    Object.keys(country.repeats).forEach((number) => {
-      country.missing.delete(Number(number));
-    });
-  });
+  resolveRepeatMissingConflicts(targetState);
 }
 
 function applyUserSeeds(targetState) {
-  const seed = USER_REPEAT_SEEDS[normalizeEmail(activeUser?.email)];
-  if (!seed) return;
+  const email = normalizeEmail(activeUser?.email);
+  const missingSeed = USER_MISSING_SEEDS[email];
+  const repeatSeed = USER_OFFICIAL_REPEAT_SEEDS[email];
+  const meta = ensureMeta(targetState);
+  const shouldApplyMissing = missingSeed && !meta.seeds.includes(missingSeed.id);
+  const shouldApplyRepeats = repeatSeed && !meta.seeds.includes(repeatSeed.id);
 
-  targetState.meta ||= { seeds: [] };
-  targetState.meta.seeds ||= [];
-  if (targetState.meta.seeds.includes(seed.id)) return;
+  if (!shouldApplyMissing && !shouldApplyRepeats) return;
 
-  Object.entries(seed.repeats).forEach(([countryName, numbers]) => {
-    const country = ensureCountryInState(targetState, countryName);
-    numbers.forEach((number) => addRepeat(country, number));
-  });
+  meta.incidents = [];
+  targetState.countries = [];
 
-  targetState.meta.seeds.push(seed.id);
+  if (repeatSeed) {
+    Object.entries(repeatSeed.repeats).forEach(([countryName, repeats]) => {
+      const country = ensureCountryInState(targetState, countryName);
+      Object.entries(repeats).forEach(([number, count]) => {
+        setRepeatCount(country, Number(number), count);
+      });
+    });
+    if (shouldApplyRepeats) meta.seeds.push(repeatSeed.id);
+  }
+
+  if (missingSeed) {
+    Object.entries(missingSeed.missing).forEach(([countryName, numbers]) => {
+      const country = ensureCountryInState(targetState, countryName);
+      country.missing = new Set(numbers);
+    });
+    meta.declaredMissingTotal = missingSeed.declaredMissingTotal;
+    if (shouldApplyMissing) meta.seeds.push(missingSeed.id);
+  }
 }
 
 function ensureCountryInState(targetState, name) {
@@ -744,4 +855,32 @@ function ensureCountryInState(targetState, name) {
     targetState.countries.push(country);
   }
   return country;
+}
+
+function setRepeatCount(country, number, count) {
+  const parsedCount = Number(count);
+  if (!number || number < 1 || number > ALBUM_SIZE || !Number.isFinite(parsedCount) || parsedCount <= 0) return;
+  country.repeats[number] = Math.trunc(parsedCount);
+}
+
+function ensureMeta(targetState) {
+  targetState.meta ||= {};
+  targetState.meta.seeds ||= [];
+  targetState.meta.incidents ||= [];
+  return targetState.meta;
+}
+
+function addIncident(targetState, message, details = []) {
+  const meta = ensureMeta(targetState);
+  const cleanDetails = Array.from(new Set(details)).sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
+  const key = `${message}|${cleanDetails.join(",")}`;
+
+  if (meta.incidents.some((incident) => incident.key === key)) return;
+
+  meta.incidents.unshift({
+    key,
+    message,
+    details: cleanDetails,
+  });
+  meta.incidents = meta.incidents.slice(0, 50);
 }
