@@ -7,6 +7,17 @@ const USERS = [
   { email: "diego@cromos.es", password: "mundial", name: "Diego" },
 ];
 
+const CELEBRATIONS = [
+  "¡{c} completado! 🎉",
+  "¡Equipo {c} al 100%! 🏆",
+  "¡{c} fichado enterito! ⚽",
+  "¡Plantilla de {c} completa! 🙌",
+  "¡{c} cerrado, míster! 🔥",
+  "¡{c} sin un solo hueco! 👏",
+  "¡Crack! {c} al bolsillo 💪",
+  "¡Golazo! {c} completado 🎊",
+];
+
 const DIEGO_OFFICIAL_MISSING_SEED = "diego-missing-official-181-20260704";
 const DIEGO_OFFICIAL_REPEATS_SEED = "diego-repeats-clean-20260704";
 
@@ -373,7 +384,9 @@ function renderBoard() {
 function toggleSticker(country, number) {
   if (country.missing.has(number)) {
     country.missing.delete(number);
-    saveAndRender(`${country.name} ${number}: ahora lo tienes`);
+    const justCompleted = country.missing.size === 0;
+    saveAndRender(justCompleted ? "" : `${country.name} ${number}: ahora lo tienes`);
+    if (justCompleted) celebrate(country.name);
     return;
   }
 
@@ -565,16 +578,44 @@ function flashSaved() {
   els.saveState.classList.add("flash");
 }
 
-function toast(message) {
+function toast(message, variant) {
   clearTimeout(toastTimer);
   document.querySelector(".toast")?.remove();
 
   const node = document.createElement("div");
-  node.className = "toast";
+  node.className = "toast" + (variant ? ` toast-${variant}` : "");
   node.textContent = message;
   document.body.append(node);
 
-  toastTimer = setTimeout(() => node.remove(), 1800);
+  toastTimer = setTimeout(() => node.remove(), variant === "celebrate" ? 2800 : 1800);
+}
+
+function celebrate(countryName) {
+  const template = CELEBRATIONS[Math.floor(Math.random() * CELEBRATIONS.length)];
+  toast(template.replace("{c}", countryName), "celebrate");
+  launchConfetti();
+}
+
+function launchConfetti() {
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+  const layer = document.createElement("div");
+  layer.className = "confetti";
+  const colors = ["#c53a2f", "#0f7a52", "#f6b52c", "#2f5fb0", "#ffd066", "#37c78a"];
+
+  for (let i = 0; i < 46; i += 1) {
+    const piece = document.createElement("i");
+    piece.style.left = `${Math.random() * 100}vw`;
+    piece.style.background = colors[i % colors.length];
+    piece.style.animationDelay = `${Math.random() * 0.25}s`;
+    piece.style.animationDuration = `${1.6 + Math.random() * 1.1}s`;
+    piece.style.setProperty("--x", `${Math.random() * 160 - 80}px`);
+    piece.style.setProperty("--r", `${Math.random() * 720 - 360}deg`);
+    layer.append(piece);
+  }
+
+  document.body.append(layer);
+  setTimeout(() => layer.remove(), 3200);
 }
 
 function buildExportText() {

@@ -1067,6 +1067,56 @@ h2 {
   }
 }
 
+.toast-celebrate {
+  padding: 15px 22px;
+  border: 1px solid #d39618;
+  color: #2a1a00;
+  background: linear-gradient(180deg, #ffd873, #f6b52c);
+  font-size: 1.02rem;
+  font-weight: 900;
+}
+
+@media (prefers-color-scheme: dark) {
+  .toast-celebrate {
+    border-color: #d39618;
+    color: #2a1a00;
+    background: linear-gradient(180deg, #ffd873, #f6b52c);
+  }
+}
+
+/* ---------- Confetti (team completed) ---------- */
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti i {
+  position: absolute;
+  top: -16px;
+  width: 9px;
+  height: 15px;
+  border-radius: 2px;
+  opacity: 0.95;
+  animation-name: confetti-fall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translate(0, -10px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--x, 0), 106vh) rotate(var(--r, 360deg));
+    opacity: 0.9;
+  }
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1040px) {
