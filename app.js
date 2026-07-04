@@ -7,6 +7,32 @@ const USERS = [
   { email: "diego@cromos.es", password: "mundial", name: "Diego" },
 ];
 
+const DIEGO_REPEATS_SEED = "diego-repes-20260704";
+const USER_REPEAT_SEEDS = {
+  "diego@cromos.es": {
+    id: DIEGO_REPEATS_SEED,
+    repeats: {
+      "Especial FIFA": [7, 9, 10, 15, 16],
+      Alemania: [4, 9],
+      Argentina: [12],
+      Australia: [1, 1, 2, 2, 5, 6, 7, 13, 15, 18, 20],
+      Bosnia: [13],
+      Canadá: [19],
+      Catar: [1, 3, 5, 6, 8, 10, 12, 16, 17, 18, 19],
+      Chequia: [1, 8, 11, 13],
+      Curazao: [3, 7, 9, 11],
+      España: [3, 4, 5, 7, 9, 11, 17, 19],
+      USA: [2, 4, 8, 10, 14, 15],
+      Inglaterra: [1, 6, 7, 8, 10, 15, 17],
+      Haití: [4, 12, 13, 17, 20],
+      Noruega: [2, 4, 5, 7, 9, 10, 12, 15, 20],
+      "Nueva Zelanda": [2, 3, 7, 8, 15, 16, 18, 19, 20],
+      Uzbekistán: [12, 14, 17, 18],
+      Uruguay: [8, 15, 16, 17],
+    },
+  },
+};
+
 const INITIAL_COUNTRIES = [
   ["Alemania", [1, 16]],
   ["Argelia", [9]],
@@ -46,6 +72,7 @@ const els = {
   missingTotal: $("#missingTotal"),
   ownedTotal: $("#ownedTotal"),
   repeatTotal: $("#repeatTotal"),
+  crossCheckStatus: $("#crossCheckStatus"),
   saveState: $("#saveState"),
   countrySelect: $("#countrySelect"),
   stickerNumber: $("#stickerNumber"),
@@ -201,6 +228,7 @@ function markMissing() {
   const number = readStickerNumber();
   if (!country || !number) return;
 
+  delete country.repeats[number];
   country.missing.add(number);
   saveAndRender(`${country.name} ${number} marcado como falta`);
   focusNumber();
@@ -279,6 +307,7 @@ function renderCounters() {
   els.missingTotal.textContent = missing;
   els.ownedTotal.textContent = owned;
   els.repeatTotal.textContent = repeats;
+  renderCrossCheck();
 }
 
 function renderBoard() {
@@ -369,6 +398,16 @@ function sortedNumbers(set) {
   return Array.from(set).sort((a, b) => a - b);
 }
 
+function renderCrossCheck() {
+  const conflicts = findRepeatMissingConflicts();
+  const hasConflicts = conflicts.length > 0;
+  els.crossCheckStatus.classList.toggle("is-ok", !hasConflicts);
+  els.crossCheckStatus.classList.toggle("is-warn", hasConflicts);
+  els.crossCheckStatus.textContent = hasConflicts
+    ? `Revisar: ${conflicts.length} repes estaban en faltantes`
+    : "Cruce OK: ningun repe esta en faltantes";
+}
+
 function saveCorrection() {
   const country = currentCountry();
   if (!country) return;
@@ -388,7 +427,7 @@ function saveCorrection() {
   }
 
   country.name = newName;
-  country.missing = new Set(parseNumberList(els.editMissingNumbers.value));
+  country.missing = new Set(withoutRepeatedNumbers(parseNumberList(els.editMissingNumbers.value), country));
   selectedCountry = newName;
   saveAndRender("Corrección guardada");
 }
@@ -406,6 +445,7 @@ function deleteSelectedCountry() {
 }
 
 function saveAndRender(message) {
+  sanitizeRepeatMissingOverlap();
   saveState();
   render();
   flashSaved();
@@ -484,6 +524,43 @@ function parseNumberList(text) {
   return Array.from(new Set(numbers || [])).sort((a, b) => a - b);
 }
 
+function withoutRepeatedNumbers(numbers, country) {
+  const repeated = new Set(Object.keys(country.repeats).map(Number));
+  return numbers.filter((number) => !repeated.has(number));
+}
+
+function addRepeat(country, number, amount = 1) {
+  if (!number || number < 1 || number > ALBUM_SIZE) return;
+  country.missing.delete(number);
+  country.repeats[number] = (country.repeats[number] || 0) + amount;
+}
+
+function findRepeatMissingConflicts() {
+  if (!state) return [];
+  const conflicts = [];
+  state.countries.forEach((country) => {
+    Object.keys(country.repeats).forEach((number) => {
+      const parsed = Number(number);
+      if (country.missing.has(parsed)) {
+        conflicts.push(`${country.name} ${parsed}`);
+      }
+    });
+  });
+  return conflicts;
+}
+
+function sanitizeRepeatMissingOverlap() {
+  if (!state) return 0;
+  let removed = 0;
+  state.countries.forEach((country) => {
+    Object.keys(country.repeats).forEach((number) => {
+      const parsed = Number(number);
+      if (country.missing.delete(parsed)) removed += 1;
+    });
+  });
+  return removed;
+}
+
 function ensureCountry(name) {
   const cleanName = cleanCountryName(name);
   let country = state.countries.find((item) => normalize(item.name) === normalize(cleanName));
@@ -521,6 +598,7 @@ function clampNumber(value, min, max) {
 function saveState() {
   if (!activeUser) return;
   const serializable = {
+    meta: state.meta || { seeds: [] },
     countries: state.countries.map((country) => ({
       name: country.name,
       missing: sortedNumbers(country.missing),
@@ -540,26 +618,34 @@ function loadState() {
 
   try {
     const parsed = JSON.parse(raw);
-    return {
+    const loaded = {
+      meta: parsed.meta || { seeds: [] },
       countries: parsed.countries.map((country) => ({
         name: country.name,
         missing: new Set(country.missing || []),
         repeats: country.repeats || {},
       })),
     };
+    applyUserSeeds(loaded);
+    sanitizeState(loaded);
+    return loaded;
   } catch {
     return createInitialState();
   }
 }
 
 function createInitialState() {
-  return {
+  const initial = {
+    meta: { seeds: [] },
     countries: INITIAL_COUNTRIES.map(([name, missing]) => ({
       name,
       missing: new Set(missing.filter((number) => number >= 1 && number <= ALBUM_SIZE)),
       repeats: {},
     })),
   };
+  applyUserSeeds(initial);
+  sanitizeState(initial);
+  return initial;
 }
 
 function login() {
@@ -582,6 +668,8 @@ function login() {
 
 function startApp() {
   state = loadState();
+  sanitizeRepeatMissingOverlap();
+  saveState();
   selectedCountry = state.countries[0]?.name || "Alemania";
   onlyMissing = false;
   searchTerm = "";
@@ -622,4 +710,38 @@ function migrateLegacyState(key) {
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function sanitizeState(targetState) {
+  targetState.countries.forEach((country) => {
+    Object.keys(country.repeats).forEach((number) => {
+      country.missing.delete(Number(number));
+    });
+  });
+}
+
+function applyUserSeeds(targetState) {
+  const seed = USER_REPEAT_SEEDS[normalizeEmail(activeUser?.email)];
+  if (!seed) return;
+
+  targetState.meta ||= { seeds: [] };
+  targetState.meta.seeds ||= [];
+  if (targetState.meta.seeds.includes(seed.id)) return;
+
+  Object.entries(seed.repeats).forEach(([countryName, numbers]) => {
+    const country = ensureCountryInState(targetState, countryName);
+    numbers.forEach((number) => addRepeat(country, number));
+  });
+
+  targetState.meta.seeds.push(seed.id);
+}
+
+function ensureCountryInState(targetState, name) {
+  const cleanName = cleanCountryName(name);
+  let country = targetState.countries.find((item) => normalize(item.name) === normalize(cleanName));
+  if (!country) {
+    country = { name: cleanName, missing: new Set(), repeats: {} };
+    targetState.countries.push(country);
+  }
+  return country;
 }
