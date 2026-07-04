@@ -9,3 +9,5 @@ App móvil-first para llevar el control de cromos Panini:
 - exporta el listado actualizado
 
 Todo se guarda en el navegador con `localStorage`. No necesita servidor ni base de datos.
+
+Publicación prevista: `https://guidaitor.es/cromator/`.

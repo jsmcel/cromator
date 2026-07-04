@@ -1,0 +1,12 @@
+AddDefaultCharset UTF-8
+
+<IfModule mod_mime.c>
+  AddType text/css .css
+  AddType application/javascript .js
+  AddType application/manifest+json .webmanifest
+  AddType image/svg+xml .svg
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header set Cache-Control "no-store" "expr=%{REQUEST_URI} =~ m#/(index\.html)?$#"
+</IfModule>
