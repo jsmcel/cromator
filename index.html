@@ -86,41 +86,18 @@
             <ul id="incidentList"></ul>
           </div>
 
-          <form class="quick-form" id="quickForm">
-            <label class="country-field">
-              <span>País</span>
-              <select id="countrySelect"></select>
-            </label>
-
-            <label class="number-field">
-              <span>Nº</span>
-              <input id="stickerNumber" inputmode="numeric" type="number" min="1" max="999" autocomplete="off" />
-            </label>
-
-            <label class="repeat-field">
-              <span>Repes</span>
-              <input id="repeatCount" inputmode="numeric" type="number" min="0" max="99" value="1" autocomplete="off" />
-            </label>
-
-            <div class="action-row">
-              <button type="button" class="primary" id="markOwned">Lo tengo</button>
-              <button type="button" id="markMissing">Me falta</button>
-              <button type="button" class="warm" id="addRepeat">Guardar repes</button>
-            </div>
-          </form>
-
           <div class="selected-strip">
-            <div>
+            <label class="viewing-field">
               <span class="muted">Viendo</span>
-              <strong id="selectedCountryTitle"></strong>
-            </div>
+              <select id="countrySelect" aria-label="País que estás viendo"></select>
+            </label>
             <div class="strip-actions">
               <button type="button" id="onlyMissingToggle" aria-pressed="false">Solo faltas</button>
               <button type="button" id="exportData">Exportar</button>
             </div>
           </div>
 
-          <p class="board-hint">Toca un cromo para marcarlo <b>tengo / falta</b>. Toca la <b>＋</b> para sumar una repe.</p>
+          <p class="board-hint">Toca un cromo para marcarlo <b>tengo / falta</b>. En los que tienes, usa <b>＋</b> para sumar repes y <b>−</b> para quitarlas.</p>
           <div class="sticker-board" id="stickerBoard" aria-label="Cromos del país seleccionado"></div>
 
           <details class="disclosure">

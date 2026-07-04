@@ -122,12 +122,6 @@ const els = {
   incidentList: $("#incidentList"),
   saveState: $("#saveState"),
   countrySelect: $("#countrySelect"),
-  stickerNumber: $("#stickerNumber"),
-  repeatCount: $("#repeatCount"),
-  markOwned: $("#markOwned"),
-  markMissing: $("#markMissing"),
-  addRepeat: $("#addRepeat"),
-  selectedCountryTitle: $("#selectedCountryTitle"),
   onlyMissingToggle: $("#onlyMissingToggle"),
   exportData: $("#exportData"),
   correctionForm: $("#correctionForm"),
@@ -143,7 +137,6 @@ const els = {
   importText: $("#importText"),
   clearImport: $("#clearImport"),
   resetData: $("#resetData"),
-  quickForm: $("#quickForm"),
 };
 
 let activeUser = loadSession();
@@ -175,21 +168,6 @@ els.countrySelect.addEventListener("change", () => {
   selectedCountry = els.countrySelect.value;
   render();
 });
-
-els.stickerNumber.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    markOwned();
-  }
-});
-
-els.quickForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-});
-
-els.markOwned.addEventListener("click", markOwned);
-els.markMissing.addEventListener("click", markMissing);
-els.addRepeat.addEventListener("click", saveRepeats);
 
 els.correctionForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -260,71 +238,8 @@ els.resetData.addEventListener("click", () => {
   saveAndRender("Lista reiniciada");
 });
 
-function markOwned() {
-  const country = currentCountry();
-  const number = readStickerNumber();
-  if (!country || !number) return;
-
-  country.missing.delete(number);
-  saveAndRender(`${country.name} ${number} marcado como conseguido`);
-  focusNumber();
-}
-
-function markMissing() {
-  const country = currentCountry();
-  const number = readStickerNumber();
-  if (!country || !number) return;
-
-  if (country.repeats[number]) {
-    addIncident(state, "Faltantes mandan: repe quitado al marcar falta", [`${country.name} ${number}`]);
-  }
-  delete country.repeats[number];
-  country.missing.add(number);
-  saveAndRender(`${country.name} ${number} marcado como falta`);
-  focusNumber();
-}
-
-function saveRepeats() {
-  const country = currentCountry();
-  const number = readStickerNumber();
-  if (!country || !number) return;
-
-  const count = clampNumber(Number(els.repeatCount.value), 0, 99);
-  if (country.missing.has(number) && count > 0) {
-    delete country.repeats[number];
-    addIncident(state, "No guardado como repe porque sigue en faltantes", [`${country.name} ${number}`]);
-    saveAndRender(`${country.name} ${number} sigue en faltantes`);
-    focusNumber();
-    return;
-  }
-
-  if (count === 0) {
-    delete country.repeats[number];
-  } else {
-    country.repeats[number] = count;
-  }
-
-  saveAndRender(`${country.name} ${number}: ${count} repes`);
-  focusNumber();
-}
-
 function currentCountry() {
   return state.countries.find((country) => country.name === selectedCountry);
-}
-
-function readStickerNumber() {
-  const number = clampNumber(Number(els.stickerNumber.value), 1, 999);
-  if (!number) {
-    toast("Mete un número");
-    els.stickerNumber.focus();
-    return null;
-  }
-  return number;
-}
-
-function focusNumber() {
-  els.stickerNumber.select();
-  els.stickerNumber.focus();
 }
 
 function render() {
@@ -375,15 +290,12 @@ function renderBoard() {
   els.stickerBoard.innerHTML = "";
 
   if (!country) {
-    els.selectedCountryTitle.textContent = "—";
     const empty = document.createElement("p");
     empty.className = "board-empty";
     empty.textContent = "Elige o añade un país para empezar.";
     els.stickerBoard.append(empty);
     return;
   }
-
-  els.selectedCountryTitle.textContent = country.name;
 
   for (let number = 1; number <= ALBUM_SIZE; number += 1) {
     const repeatCount = country.repeats[number] || 0;
@@ -408,20 +320,50 @@ function renderBoard() {
     main.addEventListener("click", () => toggleSticker(country, number));
     tile.append(main);
 
-    if (!isMissing) {
-      const rep = document.createElement("button");
-      rep.type = "button";
-      rep.className = "sticker-rep" + (repeatCount ? " has-repeat" : "");
-      rep.textContent = repeatCount ? String(repeatCount) : "＋";
-      rep.title = repeatCount
-        ? `${repeatCount} repes · toca para sumar una`
-        : "Añadir una repe";
-      rep.setAttribute("aria-label", `Añadir repe a ${country.name} ${number}`);
-      rep.addEventListener("click", (event) => {
+    if (!isMissing && repeatCount > 0) {
+      const stepper = document.createElement("div");
+      stepper.className = "rep-stepper";
+
+      const minus = document.createElement("button");
+      minus.type = "button";
+      minus.className = "rep-minus";
+      minus.textContent = "−";
+      minus.title = `Quitar una repe de ${country.name} ${number}`;
+      minus.setAttribute("aria-label", minus.title);
+      minus.addEventListener("click", (event) => {
+        event.stopPropagation();
+        removeOneRepeat(country, number);
+      });
+
+      const count = document.createElement("span");
+      count.className = "rep-count";
+      count.textContent = String(repeatCount);
+
+      const plus = document.createElement("button");
+      plus.type = "button";
+      plus.className = "rep-plus";
+      plus.textContent = "＋";
+      plus.title = `Añadir otra repe a ${country.name} ${number}`;
+      plus.setAttribute("aria-label", plus.title);
+      plus.addEventListener("click", (event) => {
         event.stopPropagation();
         addOneRepeat(country, number);
       });
-      tile.append(rep);
+
+      stepper.append(minus, count, plus);
+      tile.append(stepper);
+    } else if (!isMissing) {
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "sticker-rep";
+      add.textContent = "＋";
+      add.title = `Añadir una repe a ${country.name} ${number}`;
+      add.setAttribute("aria-label", add.title);
+      add.addEventListener("click", (event) => {
+        event.stopPropagation();
+        addOneRepeat(country, number);
+      });
+      tile.append(add);
     }
 
     els.stickerBoard.append(tile);
@@ -429,11 +371,8 @@ function renderBoard() {
 }
 
 function toggleSticker(country, number) {
-  els.stickerNumber.value = number;
-
   if (country.missing.has(number)) {
     country.missing.delete(number);
-    els.repeatCount.value = country.repeats[number] || 1;
     saveAndRender(`${country.name} ${number}: ahora lo tienes`);
     return;
   }
@@ -443,7 +382,6 @@ function toggleSticker(country, number) {
   }
   delete country.repeats[number];
   country.missing.add(number);
-  els.repeatCount.value = 1;
   saveAndRender(`${country.name} ${number}: te falta`);
 }
 
@@ -455,9 +393,25 @@ function addOneRepeat(country, number) {
 
   const next = Math.min(99, (country.repeats[number] || 0) + 1);
   country.repeats[number] = next;
-  els.stickerNumber.value = number;
-  els.repeatCount.value = next;
   saveAndRender(`${country.name} ${number}: ${next} ${next === 1 ? "repe" : "repes"}`);
+}
+
+function removeOneRepeat(country, number) {
+  const current = country.repeats[number] || 0;
+  if (current <= 0) return;
+
+  const next = current - 1;
+  if (next <= 0) {
+    delete country.repeats[number];
+  } else {
+    country.repeats[number] = next;
+  }
+
+  saveAndRender(
+    next > 0
+      ? `${country.name} ${number}: ${next} ${next === 1 ? "repe" : "repes"}`
+      : `${country.name} ${number}: sin repes`,
+  );
 }
 
 function renderCorrectionForm() {
@@ -503,7 +457,6 @@ function renderCountryList() {
       node.querySelector(".country-main").addEventListener("click", () => {
         selectedCountry = country.name;
         render();
-        els.stickerNumber.focus();
       });
 
       els.countryList.append(node);
@@ -687,11 +640,6 @@ function parseNumberList(text) {
   return Array.from(new Set(numbers || [])).sort((a, b) => a - b);
 }
 
-function addRepeat(country, number, amount = 1) {
-  if (!number || number < 1 || number > ALBUM_SIZE) return;
-  country.repeats[number] = (country.repeats[number] || 0) + amount;
-}
-
 function findRepeatMissingConflicts() {
   if (!state) return [];
   const conflicts = [];
@@ -848,7 +796,6 @@ function startApp() {
   els.authView.classList.add("is-hidden");
   els.appShell.classList.remove("is-hidden");
   render();
-  els.stickerNumber.focus();
 }
 
 function showLogin() {
