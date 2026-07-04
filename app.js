@@ -114,6 +114,8 @@ const els = {
   missingTotal: $("#missingTotal"),
   ownedTotal: $("#ownedTotal"),
   repeatTotal: $("#repeatTotal"),
+  progressLabel: $("#progressLabel"),
+  progressFill: $("#progressFill"),
   crossCheckStatus: $("#crossCheckStatus"),
   incidentPanel: $("#incidentPanel"),
   incidentCount: $("#incidentCount"),
@@ -356,51 +358,106 @@ function renderCounters() {
   const repeats = state.countries.reduce((total, country) => {
     return total + Object.values(country.repeats).reduce((sum, count) => sum + count, 0);
   }, 0);
-  const owned = state.countries.length * ALBUM_SIZE - missing;
+  const totalStickers = state.countries.length * ALBUM_SIZE;
+  const owned = totalStickers - missing;
+  const percent = totalStickers ? Math.round((owned / totalStickers) * 100) : 0;
 
   els.missingTotal.textContent = missing;
   els.ownedTotal.textContent = owned;
   els.repeatTotal.textContent = repeats;
+  els.progressLabel.textContent = `${percent}%`;
+  els.progressFill.style.width = `${percent}%`;
   renderCrossCheck();
 }
 
 function renderBoard() {
   const country = currentCountry();
   els.stickerBoard.innerHTML = "";
-  if (!country) return;
+
+  if (!country) {
+    els.selectedCountryTitle.textContent = "—";
+    const empty = document.createElement("p");
+    empty.className = "board-empty";
+    empty.textContent = "Elige o añade un país para empezar.";
+    els.stickerBoard.append(empty);
+    return;
+  }
 
   els.selectedCountryTitle.textContent = country.name;
 
   for (let number = 1; number <= ALBUM_SIZE; number += 1) {
-    const tile = document.createElement("button");
     const repeatCount = country.repeats[number] || 0;
     const isMissing = country.missing.has(number);
 
-    tile.type = "button";
+    const tile = document.createElement("div");
     tile.className = [
       "sticker",
       isMissing ? "is-missing" : "is-owned",
       repeatCount ? "is-repeat" : "",
       onlyMissing && !isMissing ? "is-hidden" : "",
     ].filter(Boolean).join(" ");
-    tile.title = `${country.name} ${number}`;
-    tile.innerHTML = `<span class="num">${number}</span>${repeatCount ? `<span class="badge">${repeatCount}</span>` : ""}`;
-    tile.addEventListener("click", () => {
-      els.stickerNumber.value = number;
-      els.repeatCount.value = repeatCount || 1;
-      focusNumber();
-    });
-    tile.addEventListener("dblclick", () => {
-      if (country.missing.has(number)) {
-        country.missing.delete(number);
-      } else {
-        country.missing.add(number);
-      }
-      saveAndRender(`${country.name} ${number} actualizado`);
-    });
+
+    const main = document.createElement("button");
+    main.type = "button";
+    main.className = "sticker-main";
+    main.title = isMissing
+      ? `${country.name} ${number}: te falta · toca para marcar que lo tienes`
+      : `${country.name} ${number}: lo tienes · toca para marcar que te falta`;
+    main.setAttribute("aria-label", main.title);
+    main.innerHTML = `<span class="num">${number}</span>`;
+    main.addEventListener("click", () => toggleSticker(country, number));
+    tile.append(main);
+
+    if (!isMissing) {
+      const rep = document.createElement("button");
+      rep.type = "button";
+      rep.className = "sticker-rep" + (repeatCount ? " has-repeat" : "");
+      rep.textContent = repeatCount ? String(repeatCount) : "＋";
+      rep.title = repeatCount
+        ? `${repeatCount} repes · toca para sumar una`
+        : "Añadir una repe";
+      rep.setAttribute("aria-label", `Añadir repe a ${country.name} ${number}`);
+      rep.addEventListener("click", (event) => {
+        event.stopPropagation();
+        addOneRepeat(country, number);
+      });
+      tile.append(rep);
+    }
 
     els.stickerBoard.append(tile);
   }
+}
+
+function toggleSticker(country, number) {
+  els.stickerNumber.value = number;
+
+  if (country.missing.has(number)) {
+    country.missing.delete(number);
+    els.repeatCount.value = country.repeats[number] || 1;
+    saveAndRender(`${country.name} ${number}: ahora lo tienes`);
+    return;
+  }
+
+  if (country.repeats[number]) {
+    addIncident(state, "Faltantes mandan: repe quitado al marcar falta", [`${country.name} ${number}`]);
+  }
+  delete country.repeats[number];
+  country.missing.add(number);
+  els.repeatCount.value = 1;
+  saveAndRender(`${country.name} ${number}: te falta`);
+}
+
+function addOneRepeat(country, number) {
+  if (country.missing.has(number)) {
+    toast(`${country.name} ${number} te falta, primero márcalo como tuyo`);
+    return;
+  }
+
+  const next = Math.min(99, (country.repeats[number] || 0) + 1);
+  country.repeats[number] = next;
+  els.stickerNumber.value = number;
+  els.repeatCount.value = next;
+  saveAndRender(`${country.name} ${number}: ${next} ${next === 1 ? "repe" : "repes"}`);
 }
 
 function renderCorrectionForm() {
@@ -420,15 +477,29 @@ function renderCountryList() {
     .forEach((country) => {
       const node = template.content.firstElementChild.cloneNode(true);
       const missingNumbers = sortedNumbers(country.missing);
+      const owned = ALBUM_SIZE - missingNumbers.length;
+      const percent = Math.round((owned / ALBUM_SIZE) * 100);
+      const complete = missingNumbers.length === 0;
       const repeats = repeatText(country);
 
       node.classList.toggle("is-selected", country.name === selectedCountry);
+      node.classList.toggle("is-complete", complete);
       node.querySelector(".country-name").textContent = country.name;
-      node.querySelector(".country-stats").textContent = `${missingNumbers.length} faltan`;
-      node.querySelector(".mini-missing").textContent = missingNumbers.length
-        ? `Faltan: ${missingNumbers.join("-")}`
-        : "Completo";
-      node.querySelector(".mini-repeats").textContent = repeats || "Sin repes";
+
+      const stats = node.querySelector(".country-stats");
+      stats.textContent = complete ? "Completo" : `${missingNumbers.length} faltan`;
+      stats.classList.toggle("is-complete", complete);
+
+      node.querySelector(".country-bar-fill").style.width = `${percent}%`;
+
+      node.querySelector(".mini-missing").textContent = complete
+        ? `${owned}/${ALBUM_SIZE} · álbum de este país completo`
+        : `Faltan: ${missingNumbers.join("-")}`;
+
+      const repeatsEl = node.querySelector(".mini-repeats");
+      repeatsEl.textContent = repeats || "";
+      repeatsEl.classList.toggle("is-hidden", !repeats);
+
       node.querySelector(".country-main").addEventListener("click", () => {
         selectedCountry = country.name;
         render();

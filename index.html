@@ -2,9 +2,10 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Cromator Panini</title>
-    <meta name="theme-color" content="#f5eddd" />
+    <meta name="theme-color" content="#f5eddd" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#12161c" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Cromator" />
     <link rel="manifest" href="manifest.webmanifest" />
@@ -14,6 +15,7 @@
   <body>
     <section class="login-shell" id="authView">
       <form class="login-panel" id="loginForm">
+        <img class="brand-mark" src="icon.svg" alt="" width="56" height="56" />
         <p class="eyebrow">Album Panini</p>
         <h1>Cromator</h1>
         <label>
@@ -31,17 +33,20 @@
 
     <div class="shell is-hidden" id="appShell">
       <header class="topbar">
-        <div>
-          <p class="eyebrow">Album Panini</p>
-          <h1>Cromator</h1>
+        <div class="brand">
+          <img class="brand-mark" src="icon.svg" alt="" width="44" height="44" />
+          <div>
+            <p class="eyebrow">Album Panini</p>
+            <h1>Cromator</h1>
+          </div>
         </div>
         <div class="account-box">
-          <div>
+          <div class="account-user">
             <span class="muted">Usuario</span>
             <strong id="currentUserName"></strong>
           </div>
-          <button type="button" id="logoutButton">Salir</button>
           <div class="save-state" id="saveState">Guardado</div>
+          <button type="button" class="ghost" id="logoutButton">Salir</button>
         </div>
       </header>
 
@@ -62,6 +67,16 @@
             </div>
           </div>
 
+          <div class="album-progress" aria-label="Progreso del álbum">
+            <div class="album-progress-head">
+              <span>Álbum completo</span>
+              <strong id="progressLabel">0%</strong>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+          </div>
+
           <div class="cross-check is-ok" id="crossCheckStatus">Cruce OK</div>
           <div class="incident-panel is-hidden" id="incidentPanel" aria-live="polite">
             <div class="incident-head">
@@ -72,13 +87,13 @@
           </div>
 
           <form class="quick-form" id="quickForm">
-            <label>
+            <label class="country-field">
               <span>País</span>
               <select id="countrySelect"></select>
             </label>
 
             <label class="number-field">
-              <span>Número</span>
+              <span>Nº</span>
               <input id="stickerNumber" inputmode="numeric" type="number" min="1" max="999" autocomplete="off" />
             </label>
 
@@ -105,22 +120,28 @@
             </div>
           </div>
 
-          <form class="correction-panel" id="correctionForm">
-            <label>
-              <span>Corregir país</span>
-              <input id="editCountryName" type="text" autocomplete="off" />
-            </label>
-            <label>
-              <span>Faltan en este país</span>
-              <input id="editMissingNumbers" type="text" inputmode="numeric" autocomplete="off" />
-            </label>
-            <div class="correction-actions">
-              <button type="submit">Guardar corrección</button>
-              <button type="button" class="danger" id="deleteCountry">Borrar país</button>
-            </div>
-          </form>
-
+          <p class="board-hint">Toca un cromo para marcarlo <b>tengo / falta</b>. Toca la <b>＋</b> para sumar una repe.</p>
           <div class="sticker-board" id="stickerBoard" aria-label="Cromos del país seleccionado"></div>
+
+          <details class="disclosure">
+            <summary>Corregir país o lista de faltas</summary>
+            <div class="disclosure-body">
+              <form class="correction-panel" id="correctionForm">
+                <label>
+                  <span>Corregir país</span>
+                  <input id="editCountryName" type="text" autocomplete="off" />
+                </label>
+                <label>
+                  <span>Faltan en este país</span>
+                  <input id="editMissingNumbers" type="text" inputmode="numeric" autocomplete="off" />
+                </label>
+                <div class="correction-actions">
+                  <button type="submit" class="primary">Guardar</button>
+                  <button type="button" class="danger" id="deleteCountry">Borrar</button>
+                </div>
+              </form>
+            </div>
+          </details>
         </section>
 
         <aside class="side-panel" aria-label="Listado por país">
@@ -129,45 +150,53 @@
               <p class="eyebrow">Listado</p>
               <h2>Países</h2>
             </div>
-            <button type="button" id="resetData">Reset</button>
+            <button type="button" class="ghost" id="resetData">Reset</button>
           </div>
 
           <label class="search">
-            <span>Buscar</span>
-            <input id="countrySearch" type="search" autocomplete="off" />
+            <span>Buscar país</span>
+            <input id="countrySearch" type="search" autocomplete="off" placeholder="Escribe un país…" />
           </label>
 
           <div class="country-list" id="countryList"></div>
         </aside>
       </main>
 
-      <section class="tools-band" aria-label="Herramientas">
-        <form class="add-country" id="addCountryForm">
-          <label>
-            <span>Nuevo país</span>
-            <input id="newCountryName" type="text" autocomplete="off" />
-          </label>
-          <button type="submit">Añadir</button>
-        </form>
+      <details class="disclosure tools-band">
+        <summary>Añadir país o importar una lista</summary>
+        <div class="disclosure-body">
+          <div class="tools-inner">
+            <form class="add-country" id="addCountryForm">
+              <label>
+                <span>Nuevo país</span>
+                <input id="newCountryName" type="text" autocomplete="off" />
+              </label>
+              <button type="submit" class="primary">Añadir</button>
+            </form>
 
-        <form class="import-box" id="importForm">
-          <label>
-            <span>Pegar lista</span>
-            <textarea id="importText" rows="4" spellcheck="false"></textarea>
-          </label>
-          <div class="import-actions">
-            <button type="submit">Importar faltas</button>
-            <button type="button" id="clearImport">Limpiar</button>
+            <form class="import-box" id="importForm">
+              <label>
+                <span>Pegar lista (País: 1-2-3)</span>
+                <textarea id="importText" rows="4" spellcheck="false"></textarea>
+              </label>
+              <div class="import-actions">
+                <button type="submit" class="primary">Importar faltas</button>
+                <button type="button" id="clearImport">Limpiar</button>
+              </div>
+            </form>
           </div>
-        </form>
-      </section>
+        </div>
+      </details>
     </div>
 
     <template id="countryCardTemplate">
       <article class="country-card">
         <button class="country-main" type="button">
-          <span class="country-name"></span>
-          <span class="country-stats"></span>
+          <span class="country-top">
+            <span class="country-name"></span>
+            <span class="country-stats"></span>
+          </span>
+          <span class="country-bar"><span class="country-bar-fill"></span></span>
         </button>
         <div class="mini-lines">
           <p class="mini-missing"></p>
