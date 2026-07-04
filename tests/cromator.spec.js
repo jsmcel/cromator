@@ -102,6 +102,15 @@ test("el toggle de fotos solo muestra imagenes mapeadas en cromos que no faltan"
   const ownedWithPhoto = page.locator('[aria-label^="Alemania 3: lo tienes"]');
   await expect(ownedWithPhoto.locator(".sticker-photo")).toHaveAttribute("src", "stickers/alemania/3.webp");
 
+  const ownedBox = await ownedWithPhoto.boundingBox();
+  const photoBox = await ownedWithPhoto.locator(".sticker-photo").boundingBox();
+  expect(ownedBox).toBeTruthy();
+  expect(photoBox).toBeTruthy();
+  expect(photoBox.width).toBeLessThanOrEqual(ownedBox.width * 0.72);
+  expect(photoBox.height).toBeLessThanOrEqual(ownedBox.height * 0.76);
+  expect(photoBox.width).toBeGreaterThan(24);
+  expect(photoBox.height).toBeGreaterThan(24);
+
   const missingWithMappedPhoto = page.locator('[aria-label^="Alemania 16: te falta"]');
   await expect(missingWithMappedPhoto.locator(".sticker-photo")).toHaveCount(0);
 

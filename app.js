@@ -1427,6 +1427,8 @@ function renderBoard() {
       img.className = "sticker-photo";
       img.src = photoSrc;
       img.alt = `${country.name} ${number}`;
+      img.width = 74;
+      img.height = 82;
       img.loading = "lazy";
       img.decoding = "async";
       img.addEventListener("error", () => {
