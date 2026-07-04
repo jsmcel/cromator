@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cromator Panini</title>
+    <meta name="theme-color" content="#f5eddd" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Cromator" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Album Panini</p>
+          <h1>Cromator</h1>
+        </div>
+        <div class="save-state" id="saveState">Guardado</div>
+      </header>
+
+      <main class="layout">
+        <section class="control-panel" aria-label="Control principal">
+          <div class="scoreboard">
+            <div class="score missing">
+              <span>Faltan</span>
+              <strong id="missingTotal">0</strong>
+            </div>
+            <div class="score owned">
+              <span>Tengo</span>
+              <strong id="ownedTotal">0</strong>
+            </div>
+            <div class="score repeat">
+              <span>Repes</span>
+              <strong id="repeatTotal">0</strong>
+            </div>
+          </div>
+
+          <form class="quick-form" id="quickForm">
+            <label>
+              <span>País</span>
+              <select id="countrySelect"></select>
+            </label>
+
+            <label class="number-field">
+              <span>Número</span>
+              <input id="stickerNumber" inputmode="numeric" type="number" min="1" max="999" autocomplete="off" />
+            </label>
+
+            <label class="repeat-field">
+              <span>Repes</span>
+              <input id="repeatCount" inputmode="numeric" type="number" min="0" max="99" value="1" autocomplete="off" />
+            </label>
+
+            <div class="action-row">
+              <button type="button" class="primary" id="markOwned">Lo tengo</button>
+              <button type="button" id="markMissing">Me falta</button>
+              <button type="button" class="warm" id="addRepeat">Guardar repes</button>
+            </div>
+          </form>
+
+          <div class="selected-strip">
+            <div>
+              <span class="muted">Viendo</span>
+              <strong id="selectedCountryTitle"></strong>
+            </div>
+            <div class="strip-actions">
+              <button type="button" id="onlyMissingToggle" aria-pressed="false">Solo faltas</button>
+              <button type="button" id="exportData">Exportar</button>
+            </div>
+          </div>
+
+          <form class="correction-panel" id="correctionForm">
+            <label>
+              <span>Corregir país</span>
+              <input id="editCountryName" type="text" autocomplete="off" />
+            </label>
+            <label>
+              <span>Faltan en este país</span>
+              <input id="editMissingNumbers" type="text" inputmode="numeric" autocomplete="off" />
+            </label>
+            <div class="correction-actions">
+              <button type="submit">Guardar corrección</button>
+              <button type="button" class="danger" id="deleteCountry">Borrar país</button>
+            </div>
+          </form>
+
+          <div class="sticker-board" id="stickerBoard" aria-label="Cromos del país seleccionado"></div>
+        </section>
+
+        <aside class="side-panel" aria-label="Listado por país">
+          <div class="side-head">
+            <div>
+              <p class="eyebrow">Listado</p>
+              <h2>Países</h2>
+            </div>
+            <button type="button" id="resetData">Reset</button>
+          </div>
+
+          <label class="search">
+            <span>Buscar</span>
+            <input id="countrySearch" type="search" autocomplete="off" />
+          </label>
+
+          <div class="country-list" id="countryList"></div>
+        </aside>
+      </main>
+
+      <section class="tools-band" aria-label="Herramientas">
+        <form class="add-country" id="addCountryForm">
+          <label>
+            <span>Nuevo país</span>
+            <input id="newCountryName" type="text" autocomplete="off" />
+          </label>
+          <button type="submit">Añadir</button>
+        </form>
+
+        <form class="import-box" id="importForm">
+          <label>
+            <span>Pegar lista</span>
+            <textarea id="importText" rows="4" spellcheck="false"></textarea>
+          </label>
+          <div class="import-actions">
+            <button type="submit">Importar faltas</button>
+            <button type="button" id="clearImport">Limpiar</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <template id="countryCardTemplate">
+      <article class="country-card">
+        <button class="country-main" type="button">
+          <span class="country-name"></span>
+          <span class="country-stats"></span>
+        </button>
+        <div class="mini-lines">
+          <p class="mini-missing"></p>
+          <p class="mini-repeats"></p>
+        </div>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
