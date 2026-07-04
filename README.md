@@ -11,3 +11,8 @@ App móvil-first para llevar el control de cromos Panini:
 Todo se guarda en el navegador con `localStorage`. No necesita servidor ni base de datos.
 
 Publicación prevista: `https://guidaitor.es/cromator/`.
+
+Usuario inicial:
+
+- Email: `diego@cromos.es`
+- Contraseña: `mundial`

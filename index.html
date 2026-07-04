@@ -12,13 +12,37 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="shell">
+    <section class="login-shell" id="authView">
+      <form class="login-panel" id="loginForm">
+        <p class="eyebrow">Album Panini</p>
+        <h1>Cromator</h1>
+        <label>
+          <span>Usuario</span>
+          <input id="loginEmail" type="email" autocomplete="username" value="diego@cromos.es" />
+        </label>
+        <label>
+          <span>Contraseña</span>
+          <input id="loginPassword" type="password" autocomplete="current-password" />
+        </label>
+        <button class="primary" type="submit">Entrar</button>
+        <p class="login-error" id="loginError" role="alert"></p>
+      </form>
+    </section>
+
+    <div class="shell is-hidden" id="appShell">
       <header class="topbar">
         <div>
           <p class="eyebrow">Album Panini</p>
           <h1>Cromator</h1>
         </div>
-        <div class="save-state" id="saveState">Guardado</div>
+        <div class="account-box">
+          <div>
+            <span class="muted">Usuario</span>
+            <strong id="currentUserName"></strong>
+          </div>
+          <button type="button" id="logoutButton">Salir</button>
+          <div class="save-state" id="saveState">Guardado</div>
+        </div>
       </header>
 
       <main class="layout">

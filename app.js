@@ -1,5 +1,11 @@
-const STORAGE_KEY = "cromator-panini-state-v1";
+const LEGACY_STORAGE_KEY = "cromator-panini-state-v1";
+const STORAGE_PREFIX = "cromator-panini-state-v2:";
+const SESSION_KEY = "cromator-panini-session-v1";
 const ALBUM_SIZE = 20;
+
+const USERS = [
+  { email: "diego@cromos.es", password: "mundial", name: "Diego" },
+];
 
 const INITIAL_COUNTRIES = [
   ["Alemania", [1, 16]],
@@ -29,6 +35,14 @@ const INITIAL_COUNTRIES = [
 const $ = (selector) => document.querySelector(selector);
 
 const els = {
+  authView: $("#authView"),
+  appShell: $("#appShell"),
+  loginForm: $("#loginForm"),
+  loginEmail: $("#loginEmail"),
+  loginPassword: $("#loginPassword"),
+  loginError: $("#loginError"),
+  currentUserName: $("#currentUserName"),
+  logoutButton: $("#logoutButton"),
   missingTotal: $("#missingTotal"),
   ownedTotal: $("#ownedTotal"),
   repeatTotal: $("#repeatTotal"),
@@ -58,13 +72,30 @@ const els = {
   quickForm: $("#quickForm"),
 };
 
-let state = loadState();
-let selectedCountry = state.countries[0]?.name || "Alemania";
+let activeUser = loadSession();
+let state = null;
+let selectedCountry = "";
 let onlyMissing = false;
 let searchTerm = "";
 let toastTimer = null;
 
-render();
+if (activeUser) {
+  startApp();
+} else {
+  showLogin();
+}
+
+els.loginForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  login();
+});
+
+els.logoutButton.addEventListener("click", () => {
+  activeUser = null;
+  state = null;
+  sessionStorage.removeItem(SESSION_KEY);
+  showLogin();
+});
 
 els.countrySelect.addEventListener("change", () => {
   selectedCountry = els.countrySelect.value;
@@ -149,7 +180,7 @@ els.clearImport.addEventListener("click", () => {
 els.resetData.addEventListener("click", () => {
   const ok = window.confirm("¿Volver a la lista inicial?");
   if (!ok) return;
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(userStorageKey(activeUser.email));
   state = createInitialState();
   selectedCountry = state.countries[0].name;
   saveAndRender("Lista reiniciada");
@@ -213,6 +244,7 @@ function focusNumber() {
 }
 
 function render() {
+  if (!state) return;
   state.countries.sort((a, b) => a.name.localeCompare(b.name, "es"));
   if (!currentCountry()) selectedCountry = state.countries[0]?.name || "";
 
@@ -487,6 +519,7 @@ function clampNumber(value, min, max) {
 }
 
 function saveState() {
+  if (!activeUser) return;
   const serializable = {
     countries: state.countries.map((country) => ({
       name: country.name,
@@ -494,11 +527,15 @@ function saveState() {
       repeats: country.repeats,
     })),
   };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
+  localStorage.setItem(userStorageKey(activeUser.email), JSON.stringify(serializable));
 }
 
 function loadState() {
-  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!activeUser) return createInitialState();
+
+  const key = userStorageKey(activeUser.email);
+  migrateLegacyState(key);
+  const raw = localStorage.getItem(key);
   if (!raw) return createInitialState();
 
   try {
@@ -523,4 +560,66 @@ function createInitialState() {
       repeats: {},
     })),
   };
+}
+
+function login() {
+  const email = normalizeEmail(els.loginEmail.value);
+  const password = els.loginPassword.value;
+  const user = USERS.find((item) => item.email === email && item.password === password);
+
+  if (!user) {
+    els.loginError.textContent = "Usuario o contraseña incorrectos";
+    els.loginPassword.select();
+    return;
+  }
+
+  activeUser = { email: user.email, name: user.name };
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(activeUser));
+  els.loginPassword.value = "";
+  els.loginError.textContent = "";
+  startApp();
+}
+
+function startApp() {
+  state = loadState();
+  selectedCountry = state.countries[0]?.name || "Alemania";
+  onlyMissing = false;
+  searchTerm = "";
+  els.countrySearch.value = "";
+  els.onlyMissingToggle.setAttribute("aria-pressed", "false");
+  els.currentUserName.textContent = activeUser.name || activeUser.email;
+  els.authView.classList.add("is-hidden");
+  els.appShell.classList.remove("is-hidden");
+  render();
+  els.stickerNumber.focus();
+}
+
+function showLogin() {
+  els.appShell.classList.add("is-hidden");
+  els.authView.classList.remove("is-hidden");
+  els.loginEmail.focus();
+}
+
+function loadSession() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
+    if (!session?.email) return null;
+    const known = USERS.find((user) => user.email === session.email);
+    return known ? { email: known.email, name: known.name } : null;
+  } catch {
+    return null;
+  }
+}
+
+function userStorageKey(email) {
+  return `${STORAGE_PREFIX}${normalizeEmail(email)}`;
+}
+
+function migrateLegacyState(key) {
+  if (localStorage.getItem(key) || !localStorage.getItem(LEGACY_STORAGE_KEY)) return;
+  localStorage.setItem(key, localStorage.getItem(LEGACY_STORAGE_KEY));
+}
+
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
 }
