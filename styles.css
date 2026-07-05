@@ -62,6 +62,11 @@ body[data-instance="mario"] {
   --paper-2: #f3dfba;
   --surface: #fffaf0;
   --surface-2: #fff2d5;
+  --ink: #172033;
+  --ink-soft: #27354c;
+  --muted: #536071;
+  --line: #dfc890;
+  --line-strong: #caa653;
   --red: #d5222a;
   --red-soft: #ffe1dd;
   --green: #0b8a48;
@@ -70,6 +75,43 @@ body[data-instance="mario"] {
   --amber-soft: #fff0b8;
   --blue: #1768b8;
   --blue-soft: #deecff;
+}
+
+body[data-instance="mario"] .eyebrow,
+body[data-instance="mario"] label span,
+body[data-instance="mario"] .album-progress-head {
+  color: #5a6472;
+}
+
+body[data-instance="mario"] .country-card {
+  border-color: #caa653;
+  background: #fff1c8;
+}
+
+body[data-instance="mario"] .country-card.is-complete {
+  border-color: #5fbf78;
+}
+
+body[data-instance="mario"] .country-stats {
+  color: #94181f;
+  background: #ffd8d4;
+  border: 1px solid #eda39c;
+}
+
+body[data-instance="mario"] .country-stats.is-complete {
+  color: #064f2a;
+  background: #c9f1d1;
+  border-color: #7fc891;
+}
+
+body[data-instance="mario"] .mini-lines p {
+  color: #3d4757;
+  font-weight: 700;
+}
+
+body[data-instance="mario"] .mini-lines .mini-repeats {
+  color: #7a4600;
+  font-weight: 800;
 }
 
 * {

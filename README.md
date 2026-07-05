@@ -23,7 +23,8 @@ Instancia Super Mario:
 - URL: `https://guidaitor.es/cromator-mario/`
 - Usuario: `cromosmario`
 - Contraseña: `jorge`
-- Álbum: `1-180` y `M1-M44`, arranca con `224` faltantes y `0` cromos marcados como tengo.
+- Álbum: `1-180` y `M1-M44`, sincronizado con `26` faltantes y `75` repes.
+- Exportar/Importar: se puede copiar la exportación completa de un móvil y pegarla en `Importar lista` en otro.
 
 Regla de cruce: si un número aparece como faltante y como repe, manda faltantes. La app lo quita de repes y lo deja registrado como incidencia.
 

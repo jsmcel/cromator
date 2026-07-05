@@ -5,6 +5,41 @@ const path = require("path");
 const appUrl = `file:///${path.resolve(__dirname, "..", "index.html").replace(/\\/g, "/")}`;
 const marioUrl = `${appUrl}?instance=mario`;
 
+async function loginMario(page) {
+  await page.goto(marioUrl);
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+  await page.reload();
+  await page.fill("#loginPassword", "jorge");
+  await page.click("button.primary");
+}
+
+async function marioStoredSummary(page) {
+  return page.evaluate(() => {
+    const raw = localStorage.getItem("cromator-mario-state-v2:cromosmario");
+    const state = JSON.parse(raw);
+    const first = state.countries.find((country) => country.name === "001-020");
+    const m21 = state.countries.find((country) => country.name === "M21-M40");
+    const last = state.countries.find((country) => country.name === "M41-M44");
+    return {
+      countries: state.countries.length,
+      missingTotal: state.countries.reduce((total, country) => total + country.missing.length, 0),
+      repeatTotal: state.countries.reduce((total, country) => {
+        return total + Object.values(country.repeats).reduce((sum, count) => sum + count, 0);
+      }, 0),
+      firstMissing: first.missing,
+      firstRepeats: first.repeats,
+      m21Missing: m21.missing,
+      lastMissing: last.missing,
+      lastRepeats: last.repeats,
+      incidents: state.meta.incidents,
+      worldState: localStorage.getItem("cromator-panini-state-v2:diego@cromos.es"),
+    };
+  });
+}
+
 test("Diego carga 181 faltantes y muestra incidencias del cruce", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(appUrl);
@@ -149,24 +184,17 @@ test("con fotos activadas ningun cromo faltante muestra imagen", async ({ page }
   }
 });
 
-test("Mario arranca sin cromos para cromosmario y guarda faltantes y repes aparte", async ({ page }) => {
+test("Mario carga los faltantes y repes oficiales de cromosmario", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(marioUrl);
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  });
-  await page.reload();
+  await loginMario(page);
 
   await expect(page.locator("#loginEmail")).toHaveValue("cromosmario");
   await expect(page.locator("#loginEmail")).toHaveAttribute("type", "text");
-  await page.fill("#loginPassword", "jorge");
-  await page.click("button.primary");
-
   await expect(page.locator("#currentUserName")).toHaveText("Jorge");
-  await expect(page.locator("#missingTotal")).toHaveText("224");
-  await expect(page.locator("#ownedTotal")).toHaveText("0");
-  await expect(page.locator("#repeatTotal")).toHaveText("0");
+  await expect(page.locator("#missingTotal")).toHaveText("26");
+  await expect(page.locator("#ownedTotal")).toHaveText("198");
+  await expect(page.locator("#repeatTotal")).toHaveText("75");
+  await expect(page.locator("#incidentPanel")).toBeHidden();
   await expect(page.locator("#photoToggle")).toBeHidden();
   await expect(page.locator(".sticker-photo")).toHaveCount(0);
 
@@ -192,27 +220,56 @@ test("Mario arranca sin cromos para cromosmario y guarda faltantes y repes apart
   await expect(page.locator(".sticker")).toHaveCount(4);
   await expect(page.locator(".sticker-main .num")).toHaveText(["M41", "M42", "M43", "M44"]);
 
-  await page.locator('[aria-label^="M41-M44 M41: te falta"]').click();
-  await page.locator(".sticker-rep").first().click();
-
-  await expect(page.locator("#missingTotal")).toHaveText("223");
-  await expect(page.locator("#ownedTotal")).toHaveText("1");
-  await expect(page.locator("#repeatTotal")).toHaveText("1");
-
-  const stored = await page.evaluate(() => {
-    const raw = localStorage.getItem("cromator-mario-state-v2:cromosmario");
-    const state = JSON.parse(raw);
-    const last = state.countries.find((country) => country.name === "M41-M44");
-    return {
-      countries: state.countries.length,
-      missing: last.missing,
-      repeats: last.repeats,
-      worldState: localStorage.getItem("cromator-panini-state-v2:diego@cromos.es"),
-    };
-  });
+  const stored = await marioStoredSummary(page);
 
   expect(stored.countries).toBe(12);
-  expect(stored.missing).toEqual([42, 43, 44]);
-  expect(stored.repeats["41"]).toBe(1);
+  expect(stored.missingTotal).toBe(26);
+  expect(stored.repeatTotal).toBe(75);
+  expect(stored.firstMissing).toEqual([1, 7, 20]);
+  expect(stored.firstRepeats["6"]).toBe(5);
+  expect(stored.m21Missing).toEqual([23, 24, 30, 31, 35, 40]);
+  expect(stored.lastMissing).toEqual([]);
+  expect(stored.lastRepeats).toEqual({ 42: 1, 44: 2 });
+  expect(stored.incidents).toEqual([]);
   expect(stored.worldState).toBeNull();
+});
+
+test("Mario puede importar una exportacion completa de otro movil", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await loginMario(page);
+
+  const exported = await page.evaluate(() => buildExportText());
+
+  expect(exported).toContain("IMPORTAR EN CROMATOR");
+  expect(exported).toContain("Faltan total: 26");
+  expect(exported).toContain("Repes total: 75");
+  expect(exported).toContain("001-020: 001-007-020");
+  expect(exported).toContain("M41-M44: M42x1, M44x2");
+
+  await page.evaluate(() => {
+    const raw = localStorage.getItem("cromator-mario-state-v2:cromosmario");
+    const state = JSON.parse(raw);
+    state.countries.forEach((country) => {
+      country.missing = [];
+      country.repeats = {};
+    });
+    localStorage.setItem("cromator-mario-state-v2:cromosmario", JSON.stringify(state));
+  });
+  await page.reload();
+  await expect(page.locator("#appShell")).toBeVisible();
+  await expect(page.locator("#missingTotal")).toHaveText("0");
+  await expect(page.locator("#repeatTotal")).toHaveText("0");
+
+  await page.locator("details.tools-band summary").click();
+  await page.fill("#importText", exported);
+  await page.click("#importForm button.primary");
+
+  await expect(page.locator("#missingTotal")).toHaveText("26");
+  await expect(page.locator("#repeatTotal")).toHaveText("75");
+  const stored = await marioStoredSummary(page);
+  expect(stored.firstMissing).toEqual([1, 7, 20]);
+  expect(stored.firstRepeats["6"]).toBe(5);
+  expect(stored.m21Missing).toEqual([23, 24, 30, 31, 35, 40]);
+  expect(stored.lastRepeats).toEqual({ 42: 1, 44: 2 });
+  expect(stored.incidents).toEqual([]);
 });

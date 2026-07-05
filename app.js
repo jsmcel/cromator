@@ -1135,7 +1135,7 @@ const APP_CONFIGS = {
       editMissing: "Faltan en este pais",
       addTitle: "Anadir pais o importar una lista",
       newGroup: "Nuevo pais",
-      importHint: "Pegar lista (Pais: 1-2-3)",
+      importHint: "Pegar exportacion completa o lista (Pais: 1-2-3)",
       empty: "Elige o anade un pais para empezar.",
       duplicate: "Ya existe ese pais",
       blankName: "El pais no puede quedar vacio",
@@ -1168,7 +1168,7 @@ const APP_CONFIGS = {
       editMissing: "Faltan en este bloque",
       addTitle: "Anadir bloque o importar una lista",
       newGroup: "Nuevo bloque",
-      importHint: "Pegar lista (001-020: 001-002-003)",
+      importHint: "Pegar exportacion completa o lista (001-020: 001-002-003)",
       empty: "Elige un bloque para empezar.",
       duplicate: "Ya existe ese bloque",
       blankName: "El bloque no puede quedar vacio",
@@ -1204,6 +1204,8 @@ const CELEBRATIONS = [
 
 const DIEGO_OFFICIAL_MISSING_SEED = "diego-missing-official-181-20260704";
 const DIEGO_OFFICIAL_REPEATS_SEED = "diego-repeats-clean-20260704";
+const MARIO_OFFICIAL_MISSING_SEED = "mario-missing-official-26-20260705";
+const MARIO_OFFICIAL_REPEATS_SEED = "mario-repeats-official-75-20260705";
 
 const USER_MISSING_SEEDS = {
   "diego@cromos.es": {
@@ -1259,6 +1261,22 @@ const USER_MISSING_SEEDS = {
       Uzbekistán: [5, 18],
     },
   },
+  cromosmario: {
+    id: MARIO_OFFICIAL_MISSING_SEED,
+    declaredMissingTotal: 26,
+    missing: {
+      "001-020": [1, 7, 20],
+      "021-040": [25, 37],
+      "041-060": [58],
+      "061-080": [62],
+      "081-100": [88, 100],
+      "101-120": [105, 109, 117, 118],
+      "121-140": [127, 139],
+      "141-160": [145],
+      "161-180": [165, 166, 171, 175],
+      "M21-M40": [23, 24, 30, 31, 35, 40],
+    },
+  },
 };
 
 const USER_OFFICIAL_REPEAT_SEEDS = {
@@ -1289,6 +1307,21 @@ const USER_OFFICIAL_REPEAT_SEEDS = {
       Túnez: { 2: 1, 3: 2, 7: 1, 9: 1, 13: 4, 15: 1, 16: 1, 19: 2, 20: 1 },
       Uruguay: { 8: 1, 15: 1, 16: 1, 17: 1 },
       Uzbekistán: { 6: 1, 11: 1, 12: 1, 15: 1, 16: 1 },
+    },
+  },
+  cromosmario: {
+    id: MARIO_OFFICIAL_REPEATS_SEED,
+    repeats: {
+      "001-020": { 2: 2, 4: 2, 5: 1, 6: 5, 9: 2, 18: 1 },
+      "021-040": { 21: 1, 22: 1, 23: 1, 34: 1 },
+      "041-060": { 44: 2, 47: 2, 52: 1, 54: 1, 55: 1, 59: 1 },
+      "061-080": { 71: 2, 73: 1, 75: 1, 79: 2 },
+      "081-100": { 82: 1 },
+      "101-120": { 102: 1, 108: 2, 110: 1, 111: 2, 113: 2, 119: 3 },
+      "121-140": { 121: 2, 124: 1, 133: 1, 136: 2, 138: 2 },
+      "141-160": { 144: 1, 152: 1, 155: 1, 158: 2, 159: 2, 160: 1 },
+      "161-180": { 163: 3, 164: 1, 168: 2, 169: 2, 172: 2, 174: 2, 178: 1 },
+      "M41-M44": { 42: 1, 44: 2 },
     },
   },
 };
@@ -1415,19 +1448,32 @@ els.addCountryForm.addEventListener("submit", (event) => {
 
 els.importForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  const parsed = parseMissingList(els.importText.value);
-  if (!parsed.length) {
+  const parsed = parseImportList(els.importText.value);
+  if (!parsed.missing.length && !parsed.repeats.length) {
     toast(`No he encontrado lineas con ${APP_CONFIG.copy.viewing.toLowerCase()} y numeros`);
     return;
   }
 
-  parsed.forEach(({ country, numbers }) => {
+  const touched = new Set();
+
+  parsed.missing.forEach(({ country, numbers }) => {
     const item = ensureCountry(country);
-    numbers.forEach((number) => item.missing.add(number));
+    item.missing = new Set(numbers);
+    touched.add(item.name);
   });
 
-  selectedCountry = parsed[0].country;
-  saveAndRender(`${parsed.length} ${APP_CONFIG.copy.imported}`);
+  parsed.repeats.forEach(({ country, repeats }) => {
+    const item = ensureCountry(country);
+    item.repeats = {};
+    repeats.forEach(({ number, count }) => setRepeatCount(item, number, count));
+    touched.add(item.name);
+  });
+
+  selectedCountry = Array.from(touched)[0] || selectedCountry;
+  const parts = [];
+  if (parsed.missing.length) parts.push(`${parsed.missing.length} faltas`);
+  if (parsed.repeats.length) parts.push(`${parsed.repeats.length} repes`);
+  saveAndRender(`Importado: ${parts.join(" y ")}`);
 });
 
 els.clearImport.addEventListener("click", () => {
@@ -1840,28 +1886,32 @@ function launchConfetti() {
 }
 
 function buildExportText() {
-  const lines = state.countries.map((country) => {
+  const missingLines = state.countries.map((country) => {
     const missing = sortedNumbers(country.missing);
     return `${country.name}: ${missing.length ? formatNumberList(country, missing) : "completo"}`;
   });
 
-  const repeated = state.countries
-    .map((country) => {
-      const text = repeatText(country);
-      return text ? `${country.name}: ${text.replace("Repes: ", "")}` : "";
-    })
-    .filter(Boolean);
+  const repeatLines = state.countries.map((country) => {
+    const text = repeatText(country);
+    return `${country.name}: ${text ? text.replace("Repes: ", "") : "sin repes"}`;
+  });
 
   const missingTotal = state.countries.reduce((total, country) => total + country.missing.size, 0);
+  const repeatTotal = state.countries.reduce((total, country) => {
+    return total + Object.values(country.repeats).reduce((sum, count) => sum + count, 0);
+  }, 0);
   const incidents = state.meta?.incidents || [];
 
   return [
+    "IMPORTAR EN CROMATOR",
     `Faltan total: ${missingTotal}`,
+    `Repes total: ${repeatTotal}`,
     "",
-    ...lines,
+    "Faltan",
+    ...missingLines,
     "",
     "Repes",
-    ...(repeated.length ? repeated : ["Sin repes"]),
+    ...repeatLines,
     "",
     "Incidencias",
     ...(incidents.length
@@ -1873,25 +1923,58 @@ function buildExportText() {
   ].join("\n");
 }
 
-function parseMissingList(text) {
-  return text
+function parseImportList(text) {
+  const result = { missing: [], repeats: [] };
+  let section = "missing";
+
+  String(text || "")
     .split(/\n+/)
     .map((line) => line.replace(/^[*\-\s]+/, "").trim())
-    .map((line) => {
+    .filter(Boolean)
+    .forEach((line) => {
+      const normalizedLine = normalize(line);
+      if (
+        normalizedLine === "importar en cromator" ||
+        normalizedLine.startsWith("faltan total") ||
+        normalizedLine.startsWith("repes total")
+      ) {
+        return;
+      }
+      if (normalizedLine === "faltan") {
+        section = "missing";
+        return;
+      }
+      if (normalizedLine === "repes") {
+        section = "repeats";
+        return;
+      }
+      if (normalizedLine === "incidencias") {
+        section = "incidents";
+        return;
+      }
+      if (section === "incidents") return;
+
       const match = line.match(/^([^:]+):\s*(.+)$/);
-      if (!match) return null;
+      if (!match) return;
 
       const country = cleanCountryName(match[1]);
       const group = state?.countries.find((item) => normalize(item.name) === normalize(country)) || albumGroupForName(country);
-      const numbers = parseNumberList(match[2], group || { name: country });
+      if (!country || !group) return;
 
-      if (!country || !numbers?.length) return null;
-      return { country, numbers: Array.from(new Set(numbers)) };
-    })
-    .filter(Boolean);
+      if (section === "repeats") {
+        result.repeats.push({ country, repeats: parseRepeatList(match[2], group) });
+        return;
+      }
+
+      const numbers = parseNumberList(match[2], group);
+      result.missing.push({ country, numbers });
+    });
+
+  return result;
 }
 
 function parseNumberList(text, country = currentCountry()) {
+  if (normalize(text) === "completo" || normalize(text) === "sin faltas") return [];
   const allowed = new Set(groupNumbers(country));
   const numbers = String(text || "")
     .match(/\d+/g)
@@ -1899,6 +1982,26 @@ function parseNumberList(text, country = currentCountry()) {
     .filter((number) => allowed.has(number));
 
   return Array.from(new Set(numbers || [])).sort((a, b) => a - b);
+}
+
+function parseRepeatList(text, country) {
+  if (normalize(text) === "sin repes") return [];
+  const allowed = new Set(groupNumbers(country));
+  const repeats = [];
+  const pattern = /M?\s*(\d+)\s*x\s*(\d+)/gi;
+  let match = null;
+
+  while ((match = pattern.exec(String(text || ""))) !== null) {
+    const number = Number(match[1]);
+    const count = Number(match[2]);
+    if (allowed.has(number) && Number.isFinite(count) && count > 0) {
+      repeats.push({ number, count });
+    }
+  }
+
+  if (repeats.length) return repeats;
+
+  return parseNumberList(text, country).map((number) => ({ number, count: 1 }));
 }
 
 function findRepeatMissingConflicts() {
