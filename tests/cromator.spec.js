@@ -149,7 +149,7 @@ test("con fotos activadas ningun cromo faltante muestra imagen", async ({ page }
   }
 });
 
-test("Mario arranca en blanco para cromosmario y guarda faltantes y repes aparte", async ({ page }) => {
+test("Mario arranca sin cromos para cromosmario y guarda faltantes y repes aparte", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(marioUrl);
   await page.evaluate(() => {
@@ -164,8 +164,8 @@ test("Mario arranca en blanco para cromosmario y guarda faltantes y repes aparte
   await page.click("button.primary");
 
   await expect(page.locator("#currentUserName")).toHaveText("Jorge");
-  await expect(page.locator("#missingTotal")).toHaveText("0");
-  await expect(page.locator("#ownedTotal")).toHaveText("224");
+  await expect(page.locator("#missingTotal")).toHaveText("224");
+  await expect(page.locator("#ownedTotal")).toHaveText("0");
   await expect(page.locator("#repeatTotal")).toHaveText("0");
   await expect(page.locator("#photoToggle")).toBeHidden();
   await expect(page.locator(".sticker-photo")).toHaveCount(0);
@@ -192,15 +192,15 @@ test("Mario arranca en blanco para cromosmario y guarda faltantes y repes aparte
   await expect(page.locator(".sticker")).toHaveCount(4);
   await expect(page.locator(".sticker-main .num")).toHaveText(["M41", "M42", "M43", "M44"]);
 
-  await page.locator('[aria-label^="M41-M44 M41: lo tienes"]').click();
+  await page.locator('[aria-label^="M41-M44 M41: te falta"]').click();
   await page.locator(".sticker-rep").first().click();
 
-  await expect(page.locator("#missingTotal")).toHaveText("1");
-  await expect(page.locator("#ownedTotal")).toHaveText("223");
+  await expect(page.locator("#missingTotal")).toHaveText("223");
+  await expect(page.locator("#ownedTotal")).toHaveText("1");
   await expect(page.locator("#repeatTotal")).toHaveText("1");
 
   const stored = await page.evaluate(() => {
-    const raw = localStorage.getItem("cromator-mario-state-v1:cromosmario");
+    const raw = localStorage.getItem("cromator-mario-state-v2:cromosmario");
     const state = JSON.parse(raw);
     const last = state.countries.find((country) => country.name === "M41-M44");
     return {
@@ -212,7 +212,7 @@ test("Mario arranca en blanco para cromosmario y guarda faltantes y repes aparte
   });
 
   expect(stored.countries).toBe(12);
-  expect(stored.missing).toEqual([41]);
-  expect(stored.repeats["42"]).toBe(1);
+  expect(stored.missing).toEqual([42, 43, 44]);
+  expect(stored.repeats["41"]).toBe(1);
   expect(stored.worldState).toBeNull();
 });

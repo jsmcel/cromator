@@ -1147,9 +1147,10 @@ const APP_CONFIGS = {
   },
   mario: {
     id: "mario",
-    storagePrefix: "cromator-mario-state-v1:",
+    storagePrefix: "cromator-mario-state-v2:",
     sessionKey: "cromator-mario-session-v1",
     supportsPhotos: false,
+    initiallyMissingAll: true,
     defaultLogin: "cromosmario",
     loginType: "text",
     users: [{ email: "cromosmario", password: "jorge", name: "Jorge" }],
@@ -2083,7 +2084,9 @@ function createInitialState() {
     countries: INITIAL_COUNTRIES.map(([name, missing]) => {
       const country = { name, missing: new Set(), repeats: {} };
       const allowed = new Set(groupNumbers(country));
-      country.missing = new Set(missing.filter((number) => allowed.has(number)));
+      country.missing = APP_CONFIG.initiallyMissingAll
+        ? new Set(allowed)
+        : new Set(missing.filter((number) => allowed.has(number)));
       return country;
     }),
   };
