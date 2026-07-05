@@ -16,8 +16,8 @@
     <section class="login-shell" id="authView">
       <form class="login-panel" id="loginForm">
         <img class="brand-mark" src="icon.svg" alt="" width="56" height="56" />
-        <p class="eyebrow">Album Panini</p>
-        <h1>Cromator</h1>
+        <p class="eyebrow" data-copy="album">Album Panini</p>
+        <h1 data-copy="shortTitle">Cromator</h1>
         <label>
           <span>Usuario</span>
           <input id="loginEmail" type="email" autocomplete="username" value="diego@cromos.es" />
@@ -36,8 +36,8 @@
         <div class="brand">
           <img class="brand-mark" src="icon.svg" alt="" width="44" height="44" />
           <div>
-            <p class="eyebrow">Album Panini</p>
-            <h1>Cromator</h1>
+            <p class="eyebrow" data-copy="album">Album Panini</p>
+            <h1 data-copy="shortTitle">Cromator</h1>
           </div>
         </div>
         <div class="account-box">
@@ -88,7 +88,7 @@
 
           <div class="selected-strip">
             <label class="viewing-field">
-              <span class="muted">Viendo</span>
+              <span class="muted" data-copy="viewing">Viendo</span>
               <select id="countrySelect" aria-label="País que estás viendo"></select>
             </label>
             <div class="strip-actions">
@@ -102,15 +102,15 @@
           <div class="sticker-board" id="stickerBoard" aria-label="Cromos del país seleccionado"></div>
 
           <details class="disclosure">
-            <summary>Corregir país o lista de faltas</summary>
+            <summary data-copy="correctionTitle">Corregir país o lista de faltas</summary>
             <div class="disclosure-body">
               <form class="correction-panel" id="correctionForm">
                 <label>
-                  <span>Corregir país</span>
+                  <span data-copy="editName">Corregir país</span>
                   <input id="editCountryName" type="text" autocomplete="off" />
                 </label>
                 <label>
-                  <span>Faltan en este país</span>
+                  <span data-copy="editMissing">Faltan en este país</span>
                   <input id="editMissingNumbers" type="text" inputmode="numeric" autocomplete="off" />
                 </label>
                 <div class="correction-actions">
@@ -126,13 +126,13 @@
           <div class="side-head">
             <div>
               <p class="eyebrow">Listado</p>
-              <h2>Países</h2>
+              <h2 data-copy="listTitle">Países</h2>
             </div>
             <button type="button" class="ghost" id="resetData">Reset</button>
           </div>
 
           <label class="search">
-            <span>Buscar país</span>
+            <span data-copy="search">Buscar país</span>
             <input id="countrySearch" type="search" autocomplete="off" placeholder="Escribe un país…" />
           </label>
 
@@ -141,12 +141,12 @@
       </main>
 
       <details class="disclosure tools-band">
-        <summary>Añadir país o importar una lista</summary>
+        <summary data-copy="addTitle">Añadir país o importar una lista</summary>
         <div class="disclosure-body">
           <div class="tools-inner">
             <form class="add-country" id="addCountryForm">
               <label>
-                <span>Nuevo país</span>
+                <span data-copy="newGroup">Nuevo país</span>
                 <input id="newCountryName" type="text" autocomplete="off" />
               </label>
               <button type="submit" class="primary">Añadir</button>
@@ -154,7 +154,7 @@
 
             <form class="import-box" id="importForm">
               <label>
-                <span>Pegar lista (País: 1-2-3)</span>
+                <span data-copy="importHint">Pegar lista (País: 1-2-3)</span>
                 <textarea id="importText" rows="4" spellcheck="false"></textarea>
               </label>
               <div class="import-actions">

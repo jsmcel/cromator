@@ -1,8 +1,3 @@
-const LEGACY_STORAGE_KEY = "cromator-panini-state-v1";
-const STORAGE_PREFIX = "cromator-panini-state-v2:";
-const SESSION_KEY = "cromator-panini-session-v1";
-const ALBUM_SIZE = 20;
-
 const STICKER_PHOTO_MANIFEST = {
   "Alemania": {
     1: "stickers/alemania/1.webp",
@@ -1084,12 +1079,116 @@ const STICKER_PHOTO_MANIFEST = {
   },
 };
 
+const WORLD_GROUPS = Object.keys(STICKER_PHOTO_MANIFEST).map((name) => ({
+  name,
+  numbers: range(1, 20),
+}));
+
+const MARIO_GROUPS = [
+  ...Array.from({ length: 9 }, (_, index) => {
+    const start = index * 20 + 1;
+    const end = start + 19;
+    return {
+      name: `${String(start).padStart(3, "0")}-${String(end).padStart(3, "0")}`,
+      numbers: range(start, end),
+      format: (number) => String(number).padStart(3, "0"),
+    };
+  }),
+  {
+    name: "M1-M20",
+    numbers: range(1, 20),
+    format: (number) => `M${number}`,
+  },
+  {
+    name: "M21-M40",
+    numbers: range(21, 40),
+    format: (number) => `M${number}`,
+  },
+  {
+    name: "M41-M44",
+    numbers: range(41, 44),
+    format: (number) => `M${number}`,
+  },
+];
+
+const APP_CONFIGS = {
+  world: {
+    id: "world",
+    legacyStorageKey: "cromator-panini-state-v1",
+    storagePrefix: "cromator-panini-state-v2:",
+    sessionKey: "cromator-panini-session-v1",
+    supportsPhotos: true,
+    defaultLogin: "diego@cromos.es",
+    loginType: "email",
+    users: [{ email: "diego@cromos.es", password: "mundial", name: "Diego" }],
+    groups: WORLD_GROUPS,
+    copy: {
+      title: "Cromator Panini",
+      shortTitle: "Cromator",
+      album: "Album Panini",
+      listTitle: "Paises",
+      viewing: "Viendo",
+      search: "Buscar pais",
+      searchPlaceholder: "Escribe un pais...",
+      correctionTitle: "Corregir pais o lista de faltas",
+      editName: "Corregir pais",
+      editMissing: "Faltan en este pais",
+      addTitle: "Anadir pais o importar una lista",
+      newGroup: "Nuevo pais",
+      importHint: "Pegar lista (Pais: 1-2-3)",
+      empty: "Elige o anade un pais para empezar.",
+      duplicate: "Ya existe ese pais",
+      blankName: "El pais no puede quedar vacio",
+      deleted: "Pais borrado",
+      added: "Pais anadido",
+      imported: "paises importados",
+      complete: "album de este pais completo",
+    },
+  },
+  mario: {
+    id: "mario",
+    storagePrefix: "cromator-mario-state-v1:",
+    sessionKey: "cromator-mario-session-v1",
+    supportsPhotos: false,
+    defaultLogin: "cromosmario",
+    loginType: "text",
+    users: [{ email: "cromosmario", password: "jorge", name: "Jorge" }],
+    groups: MARIO_GROUPS,
+    copy: {
+      title: "Cromator Super Mario",
+      shortTitle: "Cromator Mario",
+      album: "Super Mario Panini",
+      listTitle: "Bloques",
+      viewing: "Bloque",
+      search: "Buscar bloque",
+      searchPlaceholder: "Escribe 001, M1...",
+      correctionTitle: "Corregir bloque o lista de faltas",
+      editName: "Corregir bloque",
+      editMissing: "Faltan en este bloque",
+      addTitle: "Anadir bloque o importar una lista",
+      newGroup: "Nuevo bloque",
+      importHint: "Pegar lista (001-020: 001-002-003)",
+      empty: "Elige un bloque para empezar.",
+      duplicate: "Ya existe ese bloque",
+      blankName: "El bloque no puede quedar vacio",
+      deleted: "Bloque borrado",
+      added: "Bloque anadido",
+      imported: "bloques importados",
+      complete: "bloque completo",
+    },
+  },
+};
+
+const APP_CONFIG = pickAppConfig();
+const LEGACY_STORAGE_KEY = APP_CONFIG.legacyStorageKey || "";
+const STORAGE_PREFIX = APP_CONFIG.storagePrefix;
+const SESSION_KEY = APP_CONFIG.sessionKey;
+const ALBUM_SIZE = 20;
+const ALBUM_GROUPS = APP_CONFIG.groups;
+const USERS = APP_CONFIG.users;
 const STICKER_PHOTO_MAP = new Map(
   Object.entries(STICKER_PHOTO_MANIFEST).map(([country, photos]) => [normalize(country), photos]),
 );
-const USERS = [
-  { email: "diego@cromos.es", password: "mundial", name: "Diego" },
-];
 
 const CELEBRATIONS = [
   "¡{c} completado! 🎉",
@@ -1193,7 +1292,7 @@ const USER_OFFICIAL_REPEAT_SEEDS = {
   },
 };
 
-const INITIAL_COUNTRIES = [];
+const INITIAL_COUNTRIES = ALBUM_GROUPS.map((group) => [group.name, []]);
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -1243,6 +1342,8 @@ let showPhotos = false;
 let searchTerm = "";
 let toastTimer = null;
 
+applyInstanceConfig();
+
 if (activeUser) {
   startApp();
 } else {
@@ -1280,6 +1381,7 @@ els.onlyMissingToggle.addEventListener("click", () => {
 });
 
 els.photoToggle.addEventListener("click", () => {
+  if (!APP_CONFIG.supportsPhotos) return;
   showPhotos = !showPhotos;
   els.photoToggle.setAttribute("aria-pressed", String(showPhotos));
   renderBoard();
@@ -1307,14 +1409,14 @@ els.addCountryForm.addEventListener("submit", (event) => {
   ensureCountry(name);
   selectedCountry = name;
   els.newCountryName.value = "";
-  saveAndRender("País añadido");
+  saveAndRender(APP_CONFIG.copy.added);
 });
 
 els.importForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const parsed = parseMissingList(els.importText.value);
   if (!parsed.length) {
-    toast("No he encontrado líneas con país y números");
+    toast(`No he encontrado lineas con ${APP_CONFIG.copy.viewing.toLowerCase()} y numeros`);
     return;
   }
 
@@ -1324,7 +1426,7 @@ els.importForm.addEventListener("submit", (event) => {
   });
 
   selectedCountry = parsed[0].country;
-  saveAndRender(`${parsed.length} países importados`);
+  saveAndRender(`${parsed.length} ${APP_CONFIG.copy.imported}`);
 });
 
 els.clearImport.addEventListener("click", () => {
@@ -1376,7 +1478,7 @@ function renderCounters() {
   const repeats = state.countries.reduce((total, country) => {
     return total + Object.values(country.repeats).reduce((sum, count) => sum + count, 0);
   }, 0);
-  const totalStickers = state.countries.length * ALBUM_SIZE;
+  const totalStickers = state.countries.reduce((total, country) => total + groupSize(country), 0);
   const owned = totalStickers - missing;
   const percent = totalStickers ? Math.round((owned / totalStickers) * 100) : 0;
 
@@ -1395,15 +1497,16 @@ function renderBoard() {
   if (!country) {
     const empty = document.createElement("p");
     empty.className = "board-empty";
-    empty.textContent = "Elige o añade un país para empezar.";
+    empty.textContent = APP_CONFIG.copy.empty;
     els.stickerBoard.append(empty);
     return;
   }
 
-  for (let number = 1; number <= ALBUM_SIZE; number += 1) {
+  groupNumbers(country).forEach((number) => {
     const repeatCount = country.repeats[number] || 0;
     const isMissing = country.missing.has(number);
-    const photoSrc = showPhotos && !isMissing ? stickerPhotoFor(country.name, number) : "";
+    const stickerLabel = formatStickerNumber(country, number);
+    const photoSrc = APP_CONFIG.supportsPhotos && showPhotos && !isMissing ? stickerPhotoFor(country.name, number) : "";
 
     const tile = document.createElement("div");
     tile.className = [
@@ -1418,15 +1521,15 @@ function renderBoard() {
     main.type = "button";
     main.className = "sticker-main";
     main.title = isMissing
-      ? `${country.name} ${number}: te falta · toca para marcar que lo tienes`
-      : `${country.name} ${number}: lo tienes · toca para marcar que te falta`;
+      ? `${country.name} ${stickerLabel}: te falta · toca para marcar que lo tienes`
+      : `${country.name} ${stickerLabel}: lo tienes · toca para marcar que te falta`;
     main.setAttribute("aria-label", main.title);
 
     if (photoSrc) {
       const img = document.createElement("img");
       img.className = "sticker-photo";
       img.src = photoSrc;
-      img.alt = `${country.name} ${number}`;
+      img.alt = `${country.name} ${stickerLabel}`;
       img.width = 74;
       img.height = 82;
       img.loading = "lazy";
@@ -1440,7 +1543,7 @@ function renderBoard() {
 
     const num = document.createElement("span");
     num.className = "num";
-    num.textContent = String(number);
+    num.textContent = stickerLabel;
     main.append(num);
     main.addEventListener("click", () => toggleSticker(country, number));
     tile.append(main);
@@ -1453,7 +1556,7 @@ function renderBoard() {
       minus.type = "button";
       minus.className = "rep-minus";
       minus.textContent = "−";
-      minus.title = `Quitar una repe de ${country.name} ${number}`;
+      minus.title = `Quitar una repe de ${country.name} ${stickerLabel}`;
       minus.setAttribute("aria-label", minus.title);
       minus.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -1468,7 +1571,7 @@ function renderBoard() {
       plus.type = "button";
       plus.className = "rep-plus";
       plus.textContent = "＋";
-      plus.title = `Añadir otra repe a ${country.name} ${number}`;
+      plus.title = `Añadir otra repe a ${country.name} ${stickerLabel}`;
       plus.setAttribute("aria-label", plus.title);
       plus.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -1482,7 +1585,7 @@ function renderBoard() {
       add.type = "button";
       add.className = "sticker-rep";
       add.textContent = "＋";
-      add.title = `Añadir una repe a ${country.name} ${number}`;
+      add.title = `Añadir una repe a ${country.name} ${stickerLabel}`;
       add.setAttribute("aria-label", add.title);
       add.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -1492,35 +1595,37 @@ function renderBoard() {
     }
 
     els.stickerBoard.append(tile);
-  }
+  });
 }
 
 function toggleSticker(country, number) {
+  const ref = stickerRef(country, number);
   if (country.missing.has(number)) {
     country.missing.delete(number);
     const justCompleted = country.missing.size === 0;
-    saveAndRender(justCompleted ? "" : `${country.name} ${number}: ahora lo tienes`);
+    saveAndRender(justCompleted ? "" : `${ref}: ahora lo tienes`);
     if (justCompleted) celebrate(country.name);
     return;
   }
 
   if (country.repeats[number]) {
-    addIncident(state, "Faltantes mandan: repe quitado al marcar falta", [`${country.name} ${number}`]);
+    addIncident(state, "Faltantes mandan: repe quitado al marcar falta", [ref]);
   }
   delete country.repeats[number];
   country.missing.add(number);
-  saveAndRender(`${country.name} ${number}: te falta`);
+  saveAndRender(`${ref}: te falta`);
 }
 
 function addOneRepeat(country, number) {
+  const ref = stickerRef(country, number);
   if (country.missing.has(number)) {
-    toast(`${country.name} ${number} te falta, primero márcalo como tuyo`);
+    toast(`${ref} te falta, primero marcalo como tuyo`);
     return;
   }
 
   const next = Math.min(99, (country.repeats[number] || 0) + 1);
   country.repeats[number] = next;
-  saveAndRender(`${country.name} ${number}: ${next} ${next === 1 ? "repe" : "repes"}`);
+  saveAndRender(`${ref}: ${next} ${next === 1 ? "repe" : "repes"}`);
 }
 
 function removeOneRepeat(country, number) {
@@ -1536,8 +1641,8 @@ function removeOneRepeat(country, number) {
 
   saveAndRender(
     next > 0
-      ? `${country.name} ${number}: ${next} ${next === 1 ? "repe" : "repes"}`
-      : `${country.name} ${number}: sin repes`,
+      ? `${stickerRef(country, number)}: ${next} ${next === 1 ? "repe" : "repes"}`
+      : `${stickerRef(country, number)}: sin repes`,
   );
 }
 
@@ -1546,7 +1651,7 @@ function renderCorrectionForm() {
   if (!country) return;
 
   els.editCountryName.value = country.name;
-  els.editMissingNumbers.value = sortedNumbers(country.missing).join("-");
+  els.editMissingNumbers.value = formatNumberList(country, sortedNumbers(country.missing));
 }
 
 function renderCountryList() {
@@ -1558,8 +1663,9 @@ function renderCountryList() {
     .forEach((country) => {
       const node = template.content.firstElementChild.cloneNode(true);
       const missingNumbers = sortedNumbers(country.missing);
-      const owned = ALBUM_SIZE - missingNumbers.length;
-      const percent = Math.round((owned / ALBUM_SIZE) * 100);
+      const total = groupSize(country);
+      const owned = total - missingNumbers.length;
+      const percent = total ? Math.round((owned / total) * 100) : 0;
       const complete = missingNumbers.length === 0;
       const repeats = repeatText(country);
 
@@ -1574,8 +1680,8 @@ function renderCountryList() {
       node.querySelector(".country-bar-fill").style.width = `${percent}%`;
 
       node.querySelector(".mini-missing").textContent = complete
-        ? `${owned}/${ALBUM_SIZE} · álbum de este país completo`
-        : `Faltan: ${missingNumbers.join("-")}`;
+        ? `${owned}/${total} · ${APP_CONFIG.copy.complete}`
+        : `Faltan: ${formatNumberList(country, missingNumbers)}`;
 
       const repeatsEl = node.querySelector(".mini-repeats");
       repeatsEl.textContent = repeats || "";
@@ -1594,7 +1700,7 @@ function repeatText(country) {
   const entries = Object.entries(country.repeats)
     .filter(([, count]) => count > 0)
     .sort(([a], [b]) => Number(a) - Number(b))
-    .map(([number, count]) => `${number}x${count}`);
+    .map(([number, count]) => `${formatStickerNumber(country, Number(number))}x${count}`);
 
   return entries.length ? `Repes: ${entries.join(", ")}` : "";
 }
@@ -1648,7 +1754,7 @@ function saveCorrection() {
 
   const newName = cleanCountryName(els.editCountryName.value);
   if (!newName) {
-    toast("El país no puede quedar vacío");
+    toast(APP_CONFIG.copy.blankName);
     return;
   }
 
@@ -1656,12 +1762,12 @@ function saveCorrection() {
     return item !== country && normalize(item.name) === normalize(newName);
   });
   if (duplicate) {
-    toast("Ya existe ese país");
+    toast(APP_CONFIG.copy.duplicate);
     return;
   }
 
   country.name = newName;
-  country.missing = new Set(parseNumberList(els.editMissingNumbers.value));
+  country.missing = new Set(parseNumberList(els.editMissingNumbers.value, country));
   selectedCountry = newName;
   saveAndRender("Corrección guardada");
 }
@@ -1675,7 +1781,7 @@ function deleteSelectedCountry() {
 
   state.countries = state.countries.filter((item) => item !== country);
   selectedCountry = state.countries[0]?.name || "";
-  saveAndRender("País borrado");
+  saveAndRender(APP_CONFIG.copy.deleted);
 }
 
 function saveAndRender(message) {
@@ -1735,7 +1841,7 @@ function launchConfetti() {
 function buildExportText() {
   const lines = state.countries.map((country) => {
     const missing = sortedNumbers(country.missing);
-    return `${country.name}: ${missing.length ? missing.join("-") : "completo"}`;
+    return `${country.name}: ${missing.length ? formatNumberList(country, missing) : "completo"}`;
   });
 
   const repeated = state.countries
@@ -1775,10 +1881,8 @@ function parseMissingList(text) {
       if (!match) return null;
 
       const country = cleanCountryName(match[1]);
-      const numbers = match[2]
-        .match(/\d+/g)
-        ?.map(Number)
-        .filter((number) => number >= 1 && number <= ALBUM_SIZE);
+      const group = state?.countries.find((item) => normalize(item.name) === normalize(country)) || albumGroupForName(country);
+      const numbers = parseNumberList(match[2], group || { name: country });
 
       if (!country || !numbers?.length) return null;
       return { country, numbers: Array.from(new Set(numbers)) };
@@ -1786,11 +1890,12 @@ function parseMissingList(text) {
     .filter(Boolean);
 }
 
-function parseNumberList(text) {
+function parseNumberList(text, country = currentCountry()) {
+  const allowed = new Set(groupNumbers(country));
   const numbers = String(text || "")
     .match(/\d+/g)
     ?.map(Number)
-    .filter((number) => number >= 1 && number <= ALBUM_SIZE);
+    .filter((number) => allowed.has(number));
 
   return Array.from(new Set(numbers || [])).sort((a, b) => a - b);
 }
@@ -1802,7 +1907,7 @@ function findRepeatMissingConflicts() {
     Object.keys(country.repeats).forEach((number) => {
       const parsed = Number(number);
       if (country.missing.has(parsed)) {
-        conflicts.push(`${country.name} ${parsed}`);
+        conflicts.push(stickerRef(country, parsed));
       }
     });
   });
@@ -1816,7 +1921,7 @@ function resolveRepeatMissingConflicts(targetState) {
       const parsed = Number(number);
       if (country.missing.has(parsed)) {
         delete country.repeats[number];
-        resolved.push(`${country.name} ${parsed}`);
+        resolved.push(stickerRef(country, parsed));
       }
     });
   });
@@ -1852,6 +1957,60 @@ function cleanCountryName(value) {
     .replace(/^./, (letter) => letter.toLocaleUpperCase("es"));
 }
 
+function pickAppConfig() {
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get("instance");
+  const path = window.location.pathname.toLowerCase();
+  if (requested === "mario" || path.includes("cromator-mario")) return APP_CONFIGS.mario;
+  return APP_CONFIGS.world;
+}
+
+function applyInstanceConfig() {
+  document.body.dataset.instance = APP_CONFIG.id;
+  document.title = APP_CONFIG.copy.title;
+  document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute("content", APP_CONFIG.copy.shortTitle);
+  document.querySelectorAll("[data-copy]").forEach((node) => {
+    const key = node.dataset.copy;
+    if (APP_CONFIG.copy[key]) node.textContent = APP_CONFIG.copy[key];
+  });
+  els.loginEmail.type = APP_CONFIG.loginType;
+  els.loginEmail.value = APP_CONFIG.defaultLogin;
+  els.countrySearch.placeholder = APP_CONFIG.copy.searchPlaceholder;
+  els.countrySelect.setAttribute("aria-label", APP_CONFIG.copy.viewing);
+  els.stickerBoard.setAttribute("aria-label", `${APP_CONFIG.copy.viewing} seleccionado`);
+  els.photoToggle.classList.toggle("is-hidden", !APP_CONFIG.supportsPhotos);
+}
+
+function range(start, end) {
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+}
+
+function albumGroupForName(name) {
+  return ALBUM_GROUPS.find((group) => normalize(group.name) === normalize(name));
+}
+
+function groupNumbers(country) {
+  const group = albumGroupForName(country?.name);
+  return group?.numbers || country?.numbers || range(1, ALBUM_SIZE);
+}
+
+function groupSize(country) {
+  return groupNumbers(country).length;
+}
+
+function formatStickerNumber(country, number) {
+  const group = albumGroupForName(country?.name);
+  return group?.format ? group.format(number) : String(number);
+}
+
+function formatNumberList(country, numbers) {
+  return numbers.map((number) => formatStickerNumber(country, number)).join("-");
+}
+
+function stickerRef(country, number) {
+  return `${country.name} ${formatStickerNumber(country, number)}`;
+}
+
 function normalize(value) {
   return String(value || "")
     .normalize("NFD")
@@ -1866,8 +2025,8 @@ function stickerPhotoFor(countryName, number) {
 }
 
 function ensureAlbumCountries(targetState) {
-  Object.keys(STICKER_PHOTO_MANIFEST).forEach((countryName) => {
-    ensureCountryInState(targetState, countryName);
+  ALBUM_GROUPS.forEach((group) => {
+    ensureCountryInState(targetState, group.name);
   });
 }
 
@@ -1921,11 +2080,12 @@ function loadState() {
 function createInitialState() {
   const initial = {
     meta: { seeds: [] },
-    countries: INITIAL_COUNTRIES.map(([name, missing]) => ({
-      name,
-      missing: new Set(missing.filter((number) => number >= 1 && number <= ALBUM_SIZE)),
-      repeats: {},
-    })),
+    countries: INITIAL_COUNTRIES.map(([name, missing]) => {
+      const country = { name, missing: new Set(), repeats: {} };
+      const allowed = new Set(groupNumbers(country));
+      country.missing = new Set(missing.filter((number) => allowed.has(number)));
+      return country;
+    }),
   };
   applyUserSeeds(initial);
   ensureAlbumCountries(initial);
@@ -1999,6 +2159,13 @@ function normalizeEmail(value) {
 }
 
 function sanitizeState(targetState) {
+  targetState.countries.forEach((country) => {
+    const allowed = new Set(groupNumbers(country));
+    country.missing = new Set(sortedNumbers(country.missing).filter((number) => allowed.has(number)));
+    Object.keys(country.repeats).forEach((number) => {
+      if (!allowed.has(Number(number))) delete country.repeats[number];
+    });
+  });
   resolveRepeatMissingConflicts(targetState);
 }
 
@@ -2037,17 +2204,20 @@ function applyUserSeeds(targetState) {
 
 function ensureCountryInState(targetState, name) {
   const cleanName = cleanCountryName(name);
+  const group = albumGroupForName(cleanName);
   let country = targetState.countries.find((item) => normalize(item.name) === normalize(cleanName));
   if (!country) {
-    country = { name: cleanName, missing: new Set(), repeats: {} };
+    country = { name: group?.name || cleanName, missing: new Set(), repeats: {} };
     targetState.countries.push(country);
+  } else if (group) {
+    country.name = group.name;
   }
   return country;
 }
 
 function setRepeatCount(country, number, count) {
   const parsedCount = Number(count);
-  if (!number || number < 1 || number > ALBUM_SIZE || !Number.isFinite(parsedCount) || parsedCount <= 0) return;
+  if (!groupNumbers(country).includes(number) || !Number.isFinite(parsedCount) || parsedCount <= 0) return;
   country.repeats[number] = Math.trunc(parsedCount);
 }
 

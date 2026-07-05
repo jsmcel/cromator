@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const appUrl = `file:///${path.resolve(__dirname, "..", "index.html").replace(/\\/g, "/")}`;
+const marioUrl = `${appUrl}?instance=mario`;
 
 test("Diego carga 181 faltantes y muestra incidencias del cruce", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -146,4 +147,72 @@ test("con fotos activadas ningun cromo faltante muestra imagen", async ({ page }
     expect(counts.missingPhotos, `${country} no debe tener fotos en faltantes`).toBe(0);
     expect(counts.ownedPhotos, `${country} debe mostrar foto en todos los que tienes`).toBe(counts.owned);
   }
+});
+
+test("Mario arranca en blanco para cromosmario y guarda faltantes y repes aparte", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(marioUrl);
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+  await page.reload();
+
+  await expect(page.locator("#loginEmail")).toHaveValue("cromosmario");
+  await expect(page.locator("#loginEmail")).toHaveAttribute("type", "text");
+  await page.fill("#loginPassword", "jorge");
+  await page.click("button.primary");
+
+  await expect(page.locator("#currentUserName")).toHaveText("Jorge");
+  await expect(page.locator("#missingTotal")).toHaveText("0");
+  await expect(page.locator("#ownedTotal")).toHaveText("224");
+  await expect(page.locator("#repeatTotal")).toHaveText("0");
+  await expect(page.locator("#photoToggle")).toBeHidden();
+  await expect(page.locator(".sticker-photo")).toHaveCount(0);
+
+  const countries = await page.locator("#countrySelect option").evaluateAll((options) => {
+    return options.map((option) => option.value);
+  });
+  expect(countries).toEqual([
+    "001-020",
+    "021-040",
+    "041-060",
+    "061-080",
+    "081-100",
+    "101-120",
+    "121-140",
+    "141-160",
+    "161-180",
+    "M1-M20",
+    "M21-M40",
+    "M41-M44",
+  ]);
+
+  await page.selectOption("#countrySelect", "M41-M44");
+  await expect(page.locator(".sticker")).toHaveCount(4);
+  await expect(page.locator(".sticker-main .num")).toHaveText(["M41", "M42", "M43", "M44"]);
+
+  await page.locator('[aria-label^="M41-M44 M41: lo tienes"]').click();
+  await page.locator(".sticker-rep").first().click();
+
+  await expect(page.locator("#missingTotal")).toHaveText("1");
+  await expect(page.locator("#ownedTotal")).toHaveText("223");
+  await expect(page.locator("#repeatTotal")).toHaveText("1");
+
+  const stored = await page.evaluate(() => {
+    const raw = localStorage.getItem("cromator-mario-state-v1:cromosmario");
+    const state = JSON.parse(raw);
+    const last = state.countries.find((country) => country.name === "M41-M44");
+    return {
+      countries: state.countries.length,
+      missing: last.missing,
+      repeats: last.repeats,
+      worldState: localStorage.getItem("cromator-panini-state-v2:diego@cromos.es"),
+    };
+  });
+
+  expect(stored.countries).toBe(12);
+  expect(stored.missing).toEqual([41]);
+  expect(stored.repeats["42"]).toBe(1);
+  expect(stored.worldState).toBeNull();
 });

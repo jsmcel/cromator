@@ -18,6 +18,13 @@ Usuario inicial:
 - Email: `diego@cromos.es`
 - Contraseña: `mundial`
 
+Instancia Super Mario:
+
+- URL: `https://guidaitor.es/cromator-mario/`
+- Usuario: `cromosmario`
+- Contraseña: `jorge`
+- Álbum: `1-180` y `M1-M44`, en blanco para que cada navegador empiece desde cero.
+
 Regla de cruce: si un número aparece como faltante y como repe, manda faltantes. La app lo quita de repes y lo deja registrado como incidencia.
 
 Pruebas:

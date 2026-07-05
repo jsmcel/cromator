@@ -57,6 +57,21 @@
   }
 }
 
+body[data-instance="mario"] {
+  --paper: #f7ecd6;
+  --paper-2: #f3dfba;
+  --surface: #fffaf0;
+  --surface-2: #fff2d5;
+  --red: #d5222a;
+  --red-soft: #ffe1dd;
+  --green: #0b8a48;
+  --green-soft: #dcf6dc;
+  --amber: #d78a00;
+  --amber-soft: #fff0b8;
+  --blue: #1768b8;
+  --blue-soft: #deecff;
+}
+
 * {
   box-sizing: border-box;
 }
